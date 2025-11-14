@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdbool.h>
 
 #include "decoder.h"
 
@@ -31,31 +31,33 @@ int main(int argc, char **argv) {
     uint8_t buffer[file_size];
     fread(buffer, file_size, 1, file);
 
-    for (size_t i = 0; i < file_size; i++) {
-        printf("bit %i: ", (int) i);
-        for (int bit = 7; bit >= 0; bit--) {
-            printf("%d", (buffer[i] >> bit) & 1);
-        }
-        printf(" ");
-    }
+    print_bits(buffer, file_size);
     printf("\n");
+
+    bool pattern_matched = false;
 
     printf("bits 16\n");
     for (int i = 0; i < file_size;) {
         uint8_t byte = buffer[i];
+        pattern_matched = false;
 
         for (int j = 0; j < sizeof(opcode_patterns) / sizeof(Opcode_Pattern); j++) {
             if ((byte & opcode_patterns[j].mask) == opcode_patterns[j].opcode) {
+                pattern_matched = true;
                 Instruction instruction = opcode_patterns[j].decode_fn(buffer, i);
+                //printf("index: %i, ", i);
                 instruction_print(&instruction);
                 i += instruction.size;
 
-                continue;
+                break;
             }
         }
 
-        default_instruction(buffer, i); // if pattern not found
-        i++;
+        if (!pattern_matched) {
+            Instruction def = default_instruction(buffer, i);
+            instruction_print(&def);
+            i++;
+        }
     }
 
     free(file);
