@@ -57,12 +57,23 @@
 #define JCXZ_OPCODE 0b11100011
 
 #define FN_PARAMS uint8_t *buffer, uint16_t index
-extern uint8_t buffer[];
 
 extern char *reg_field_table[2][8];
 extern char *effective_address_table[3][8];
 extern char *cond_jump_table[16];
 extern char *label_table[8];
+
+#define MAX_LABELS 8
+typedef struct {
+    int32_t labels[MAX_LABELS];
+} Label_Manager;
+
+extern Label_Manager label_manager;
+
+void label_init();
+int32_t label_exists(int32_t offset);
+void try_label_insert(int32_t offset);
+void label_print(int32_t offset);
 
 typedef struct {
     char mnemonic[32];

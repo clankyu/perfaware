@@ -61,6 +61,57 @@ char *label_table[8] = {
     "label4", "label5", "label6", "label7"
 };
 
+Label_Manager label_manager;
+
+void label_init() {
+    label_manager.labels[0] = -1;
+    label_manager.labels[1] = -1;
+    label_manager.labels[2] = -1;
+    label_manager.labels[3] = -1;
+    label_manager.labels[4] = -1;
+    label_manager.labels[5] = -1;
+    label_manager.labels[6] = -1;
+    label_manager.labels[7] = -1;
+}
+
+int32_t label_exists(int32_t offset) {
+    for (int i = 0; i < MAX_LABELS; i++) {
+        if (label_manager.labels[i] == offset) {
+            return 1;
+        }
+        if (label_manager.labels[i] == -1) {
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
+void try_label_insert(int32_t offset) {
+    for (int i = 0; i < MAX_LABELS; i++) {
+        if (label_manager.labels[i] == offset) {
+            printf("returning\n");
+            return;
+        }
+        if (label_manager.labels[i] == -1) {
+            label_manager.labels[i] = offset;
+            printf("returning\n");
+            return;
+        }
+    }
+
+    //printf("[ERROR]: max number of labels reached, offset: %i\n", offset);
+}
+
+void label_print(int32_t offset) {
+    for (int i = 0; i < MAX_LABELS; i++) {
+        if (label_manager.labels[i] == offset) {
+            printf("%s:\n", label_table[i]);
+            return;
+        }
+    }
+}
+
 void instruction_print(Instruction *instruction) {
     printf("%s %s, %s\n", instruction->mnemonic, instruction->dest, instruction->source);
 }
@@ -368,6 +419,8 @@ Instruction decode_cond_jump(FN_PARAMS) {
     strcpy(instr.source, "\0");
     sprintf(instr.dest, "%i", offset);
 
+    try_label_insert(index + offset);
+
     instr.size = 2;
 
     return instr;
@@ -389,6 +442,10 @@ Instruction decode_control_transfer(FN_PARAMS) {
     }
 
     sprintf(instr.dest, "%i", offset);
+
+    try_label_insert(index + offset);
+    printf("tried inserting byte offset: %i\n", index + offset);
+
     instr.size = 2;
 
     return instr;
