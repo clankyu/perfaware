@@ -5,6 +5,10 @@
 #include <stdbool.h>
 
 #include "decoder.h"
+#include "memory.h"
+
+void dissasemble_8086(uint32_t byte_count, Seg_Mem *byte_data);
+void run_8086(Instruction *instructions, uint32_t instruction_count);
 
 int main(int argc, char **argv) {
     printf("Argument count: %i\n", argc);
@@ -34,19 +38,24 @@ int main(int argc, char **argv) {
     print_bits(buffer, file_size);
     printf("\n");
 
+
+    free(file);
+
+    return 0;
+}
+
+void dissasemble_8086(uint32_t byte_count, Seg_Mem *byte_data) {
     bool pattern_matched = false;
 
     printf("bits 16\n");
-    for (int i = 0; i < file_size;) {
-        uint8_t byte = buffer[i];
+    for (int i = 0; i < byte_count;) {
+        uint8_t byte = byte_data->memory[byte_data->base + i];
         pattern_matched = false;
 
         for (int j = 0; j < sizeof(opcode_patterns) / sizeof(Opcode_Pattern); j++) {
             if ((byte & opcode_patterns[j].mask) == opcode_patterns[j].opcode) {
                 pattern_matched = true;
-                Instruction instruction = opcode_patterns[j].decode_fn(buffer, i);
-                //printf("index: %i, ", i);
-                instruction_print(&instruction);
+                Instruction instruction = opcode_patterns[j].decode_fn(byte_data, i);
                 i += instruction.size;
 
                 break;
@@ -60,8 +69,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    free(file);
-
-    return 0;
 }
 
+void run_8086(Instruction *instructions, uint32_t instruction_count) {
+
+}

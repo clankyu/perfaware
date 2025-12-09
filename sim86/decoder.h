@@ -57,7 +57,6 @@
 #define JCXZ_OPCODE 0b11100011
 
 #define FN_PARAMS uint8_t *buffer, uint16_t index
-extern uint8_t buffer[];
 
 extern char *reg_field_table[2][8];
 extern char *effective_address_table[3][8];
