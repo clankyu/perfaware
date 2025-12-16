@@ -1,7 +1,7 @@
-#include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "decoder.h"
+#include "instruction.h"
 
 Opcode_Pattern opcode_patterns[29] = {
     { MOV_MASK, MOV_OPCODE, decode_mov },
@@ -16,7 +16,7 @@ Opcode_Pattern opcode_patterns[29] = {
     { COND_JUMP_MASK, JO_OPCODE,  decode_cond_jump },
     { COND_JUMP_MASK, JNO_OPCODE, decode_cond_jump },
     { COND_JUMP_MASK, JB_OPCODE,  decode_cond_jump },
-    { COND_JUMP_MASK, JAE_OPCODE, decode_cond_jump },
+    { COND_JUMP_MASK, JNB_OPCODE, decode_cond_jump },
     { COND_JUMP_MASK, JE_OPCODE,  decode_cond_jump },
     { COND_JUMP_MASK, JNE_OPCODE, decode_cond_jump },
     { COND_JUMP_MASK, JBE_OPCODE, decode_cond_jump },
@@ -35,58 +35,13 @@ Opcode_Pattern opcode_patterns[29] = {
     { JCXZ_MASK, JCXZ_OPCODE,  decode_control_transfer },
 };
 
-char *reg_field_table[2][8] = {
-    { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh" },
-    { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di" }
+static uint32_t cond_jump_table[16] = {
+    Op_jo, Op_jno, Op_jb, Op_jnb, Op_je, Op_jne, Op_jbe, Op_jne,
+    Op_js, Op_jns, Op_jp, Op_jnp, Op_jl, Op_jnl, Op_jle, Op_ja
 };
 
-char *effective_address_table[3][8] = {
-    { "[bx + si]", "[bx + di]", "[bp + si]", "[bp + di]",
-      "[si]", "[di]", "[DIRECT ADDRESS]", "[bx]" },
-
-    { "[bx + si + ", "[bx + di + ", "[bp + si + ", "[bp + di + ",
-      "[si ", "[di + ", "[bp + ", "[bx + " },
-
-    { "[bx + si + ", "[bx + di + ", "[bp + si + ", "[bp + di + ",
-      "[si + ", "[di + ", "[bp + ", "[bx + " }
-};
-
-char *cond_jump_table[16] = {
-    "jo", "jno", "jb", "jnb", "je", "jne", "jbe", "jnbe",
-    "js", "jns", "jp", "jnp", "jl", "jnl", "jle", "jnle"
-};
-
-char *label_table[8] = {
-    "label0", "label1", "label2", "label3",
-    "label4", "label5", "label6", "label7"
-};
-
-void instruction_print(Instruction *instruction) {
-    printf("%s %s, %s\n", instruction->mnemonic, instruction->dest, instruction->source);
-}
-
-void print_bits(uint8_t *data, uint32_t size) {
-    for (size_t i = 0; i < size; i++) {
-        printf("bit %i: ", (int) i);
-        for (int bit = 7; bit >= 0; bit--) {
-            printf("%d", (data[i] >> bit) & 1);
-        }
-        printf(" ");
-    }
-}
-
-void format_displacement(char *dest, char *source, int16_t displacement) {
-    if (displacement == 0) {
-        for (int i = 0; i < 3; i++) {
-            dest[i] = source[i];
-        }
-        dest[3] = ']';
-        dest[4] = '\0';
-    } else {
-        char append[32];
-        sprintf(append, "%d]", displacement);
-        strcat(dest, append);
-    }
+Operation_Type get_cond_jump_type(uint8_t opcode) {
+    return cond_jump_table[COND_JUMP_INDEX(opcode)];
 }
 
 Instruction decode_instruction(uint8_t *buffer, uint16_t index) {
@@ -105,10 +60,18 @@ Instruction default_instruction(FN_PARAMS) {
     sprintf(source, "index: %i", index);
 
     Instruction instr = (Instruction) {
-        .mnemonic = "default",
-        .dest = "unimplemented opcode",
+        .op_type = Op_Unimplemented,
+        .size = 1,
+        .address = index,
+        .dest = (Instruction_Operand) {
+            .type = Operand_Immediate,
+            .immediate = 6761,
+        },
+        .source = (Instruction_Operand) {
+            .type = Operand_Immediate,
+            .immediate = 6761
+        }
     };
-    strcpy(instr.source, source);
 
     return instr;
 }
@@ -126,42 +89,42 @@ Instruction decode_mov(FN_PARAMS) {
     params.reg = (byte2 >> 3) & 0b111;
     params.rm = byte2 & 0b111;
 
-    strcpy(instr.mnemonic, "mov");
-    strcpy(instr.dest, reg_field_table[params.w][params.reg]);
+    instr.op_type = Op_mov;
+    instr.dest = register_operand(params);
 
     if (params.mod == 0) {
         // exception here according to the manual for rm = 0b110
         if (params.rm == 0b110) {
             int16_t displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
-            sprintf(instr.source, "[%d]", displacement);
+            instr.source = effective_address_operand(params, displacement);
             instr.size = 4;
         } else {
-            strcpy(instr.source, effective_address_table[params.mod][params.rm]);
+            instr.source = register_operand(params);
             instr.size = 2;
         }
-    } else if (params.mod == 0b01 || params.mod == 0b10) {
-        strcpy(instr.source, effective_address_table[params.mod][params.rm]);
 
+    } else if (params.mod == 0b01 || params.mod == 0b10) {
         int16_t displacement = 0;
         if (params.mod == 0b01) {
             displacement = (int8_t) buffer[index+2];
+            instr.source = effective_address_operand(params, displacement);
             instr.size = 3;
         } else if (params.mod == 0b10) {
             displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
+            instr.source = effective_address_operand(params, displacement);
             instr.size = 4;
         }
 
-        format_displacement(instr.source, effective_address_table[params.mod][params.rm], displacement);
+        //format_displacement(instr.source, effective_address_table[params.mod][params.rm], displacement);
     } else if (params.mod == 0b11) {
-        strcpy(instr.source, reg_field_table[params.w][params.rm]);
+        instr.source = register_operand(params);
         instr.size = 2;
     }
 
     if (params.d == 0) {
-        char temp[32];
-        strcpy(temp, instr.source);
-        strcpy(instr.source, instr.dest);
-        strcpy(instr.dest, temp);
+        Instruction_Operand temp = instr.dest;
+        instr.dest = instr.source;
+        instr.source = temp;
     }
 
     return instr;
@@ -169,20 +132,22 @@ Instruction decode_mov(FN_PARAMS) {
 
 Instruction decode_immediate_mov(FN_PARAMS) {
     Instruction instr;
+    Instruction_Params params = {};
 
     uint8_t byte = buffer[index];
-    uint8_t w = (byte >> 3) & 0b1;
-    uint8_t reg = byte & 0b111;
+    params.w = (byte >> 3) & 0b1;
+    params.reg = byte & 0b111;
 
-    strcpy(instr.mnemonic, "mov");
-    strcpy(instr.dest, reg_field_table[w][reg]);
+    instr.op_type = Op_mov;
+    instr.dest = register_operand(params);
 
-    if (w) {
+    if (params.w) {
         int16_t s = (int16_t)buffer[index+1] | ((int16_t)buffer[index+2] << 8);
-        sprintf(instr.source, "%d", s);
+        instr.source = immediate_operand(s);
         instr.size = 3;
     } else {
-        sprintf(instr.source, "%d", (int8_t) buffer[index+1]);
+        int16_t s = buffer[index+1];
+        instr.source = immediate_operand(s);
         instr.size = 2;
     }
 
@@ -191,63 +156,62 @@ Instruction decode_immediate_mov(FN_PARAMS) {
 
 Instruction decode_immediate_arithmetic(FN_PARAMS) {
     Instruction instr;
+    Instruction_Params params;
 
     uint8_t byte = buffer[index];
     uint8_t s = (byte >> 1) & 0b1;
-    uint8_t w = byte & 0b1;
-    uint8_t mod = (buffer[index+1] >> 6) & 0b11;
-    uint8_t rm = buffer[index+1] & 0b111;
+    params.w = byte & 0b1;
+    params.mod = (buffer[index+1] >> 6) & 0b11;
+    params.rm = buffer[index+1] & 0b111;
     instr.size = 2;
 
     int16_t displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
     int16_t data = 0;
 
-    uint8_t instruction_type = (buffer[index+1] >> 3) & 0b111;
-    switch (instruction_type) {
+    uint8_t op_type = (buffer[index+1] >> 3) & 0b111;
+    switch (op_type) {
         case 0b000:
-            strcpy(instr.mnemonic, "add");
+            instr.op_type = Op_add;
             break;
         case 0b101:
-            strcpy(instr.mnemonic, "sub");
+            instr.op_type = Op_sub;
             break;
         case 0b111:
-            strcpy(instr.mnemonic, "cmp");
+            instr.op_type = Op_cmp;
             break;
     }
 
     int16_t data_idx = index + 2;
-    switch (mod) {
+    switch (params.mod) {
         case 0b00:
-            if (rm == 0b110) {
-                sprintf(instr.dest, "[%d]", displacement);
+            if (params.rm == 0b110) {
+                instr.dest = effective_address_operand(params, displacement);
                 data_idx = index + 4;
                 instr.size += 2;
             } else {
+                instr.dest = effective_address_operand(params, 0);
                 data_idx = index + 2;
-                strcpy(instr.dest, effective_address_table[mod][rm]);
             }
             break;
         case 0b01:
-            strcpy(instr.dest, effective_address_table[mod][rm]);
-            format_displacement(instr.dest, effective_address_table[mod][rm], displacement);
+            instr.dest = effective_address_operand(params, displacement);
             instr.size++;
             data_idx = index + 3;
             break;
         case 0b10:
-            strcpy(instr.dest, effective_address_table[mod][rm]);
-            format_displacement(instr.dest, effective_address_table[mod][rm], displacement);
+            instr.dest = effective_address_operand(params, displacement);
             instr.size += 2;
             data_idx = index + 4;
             break;
         case 0b11:
-            strcpy(instr.dest, reg_field_table[w][rm]);
+            instr.dest = register_operand(params);
             data_idx = index + 2;
             break;
         default:
-            printf("[ERROR]: decode_immediate_arithmetic, mod is not 0b00, 0b01, 0b10 or 0b11, mod: %i\n", mod);
+            printf("[ERROR]: decode_immediate_arithmetic, mod is not 0b00, 0b01, 0b10 or 0b11, mod: %i\n", params.mod);
     }
 
-    if (w) {
+    if (params.w) {
         if (s) {
             data = (int16_t)(int8_t)buffer[data_idx];
             instr.size++;
@@ -260,7 +224,7 @@ Instruction decode_immediate_arithmetic(FN_PARAMS) {
         instr.size++;
     }
 
-    sprintf(instr.source, "%d", data);
+    instr.source = immediate_operand(data);
 
     return instr;
 }
@@ -280,31 +244,29 @@ Instruction decode_arithmetic(FN_PARAMS) {
 
     switch (byte1 & ARITHMETIC_MASK) {
         case ADD_OPCODE:
-            strcpy(instr.mnemonic, "add");
+            instr.op_type = Op_add;
             break;
         case SUB_OPCODE:
-            strcpy(instr.mnemonic, "sub");
+            instr.op_type = Op_sub;
             break;
         case CMP_OPCODE:
-            strcpy(instr.mnemonic, "cmp");
+            instr.op_type = Op_cmp;
             break;
     }
 
-    strcpy(instr.dest, reg_field_table[params.w][params.reg]);
+    instr.dest = register_operand(params);
 
     if (params.mod == 0) {
         // exception here according to the manual for rm = 0b110
         if (params.rm == 0b110) {
             int16_t displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
-            sprintf(instr.source, "[%d]", displacement);
+            instr.source = effective_address_operand(params, displacement);
             instr.size = 4;
         } else {
-            strcpy(instr.source, effective_address_table[params.mod][params.rm]);
+            instr.source = effective_address_operand(params, 0);
             instr.size = 2;
         }
     } else if (params.mod == 0b01 || params.mod == 0b10) {
-        strcpy(instr.source, effective_address_table[params.mod][params.rm]);
-
         int16_t displacement = 0;
         if (params.mod == 0b01) {
             displacement = (int8_t) buffer[index+2];
@@ -314,17 +276,16 @@ Instruction decode_arithmetic(FN_PARAMS) {
             instr.size = 4;
         }
 
-        format_displacement(instr.source, effective_address_table[params.mod][params.rm], displacement);
+        instr.source = effective_address_operand(params, displacement);
     } else if (params.mod == 0b11) {
-        strcpy(instr.source, reg_field_table[params.w][params.rm]);
+        instr.source = register_operand(params);
         instr.size = 2;
     }
 
     if (params.d == 0) {
-        char temp[32];
-        strcpy(temp, instr.source);
-        strcpy(instr.source, instr.dest);
-        strcpy(instr.dest, temp);
+        Instruction_Operand temp = instr.dest;
+        instr.dest = instr.source;
+        instr.source = temp;
     }
 
     return instr;
@@ -332,22 +293,24 @@ Instruction decode_arithmetic(FN_PARAMS) {
 
 Instruction decode_immediate_acumm(FN_PARAMS) {
     Instruction instr;
+    Instruction_Params params = {};
     uint8_t byte = buffer[index];
-    uint8_t w = byte & 0b1;
+    params.w = byte & 0b1;
+    params.reg = 0;
     int16_t data = 0;
 
-    strcpy(instr.dest, reg_field_table[w][0]);
+    instr.dest = register_operand(params);
 
     uint8_t opcode = byte & IMMD_TO_ACUMM_MASK;
     if (opcode == IMMD_TO_ACUMM_ADD_OPCODE) {
-        strcpy(instr.mnemonic, "add");
+        instr.op_type = Op_mov;
     } else if (opcode == IMMD_TO_ACUMM_SUB_OPCODE) {
-        strcpy(instr.mnemonic, "sub");
+        instr.op_type = Op_sub;
     } else if (opcode == IMMD_TO_ACUMM_CMP_OPCODE) {
-        strcpy(instr.mnemonic, "cmp");
+        instr.op_type = Op_sub;
     }
 
-    if (w) {
+    if (params.w) {
         data = (int16_t)buffer[index+1] | ((int16_t)buffer[index+2] << 8);
         instr.size = 3;
     } else {
@@ -355,7 +318,7 @@ Instruction decode_immediate_acumm(FN_PARAMS) {
         instr.size = 2;
     }
 
-    sprintf(instr.source, "%d", data);
+    instr.source = immediate_operand(data);
 
     return instr;
 }
@@ -364,10 +327,9 @@ Instruction decode_cond_jump(FN_PARAMS) {
     Instruction instr;
     uint8_t byte = buffer[index];
     int8_t offset = (int8_t) buffer[index + 1];
-    strcpy(instr.mnemonic, cond_jump_table[COND_JUMP_INDEX(byte)]);
-    strcpy(instr.source, "\0");
-    sprintf(instr.dest, "%i", offset);
-
+    instr.op_type = get_cond_jump_type(byte);
+    instr.dest = immediate_operand(offset);
+    instr.source = none_operand();
     instr.size = 2;
 
     return instr;
@@ -377,18 +339,19 @@ Instruction decode_control_transfer(FN_PARAMS) {
     Instruction instr;
     uint8_t byte = buffer[index];
     int8_t offset = buffer[index+1];
-    strcpy(instr.source, "\0");
+    instr.source = none_operand();
+
     if (byte == LOOP_OPCODE) {
-        strcpy(instr.mnemonic, "loop");
+        instr.op_type = Op_loop;
     } else if (byte == LOOPZ_OPCODE) {
-        strcpy(instr.mnemonic, "loopz");
+        instr.op_type = Op_loopz;
     } else if (byte == LOOPNZ_OPCODE) {
-        strcpy(instr.mnemonic, "loopnz");
+        instr.op_type = Op_loopnz;
     } else if (byte == JCXZ_OPCODE) {
-        strcpy(instr.mnemonic, "jcxz");
+        instr.op_type = Op_jcxz;
     }
 
-    sprintf(instr.dest, "%i", offset);
+    instr.dest = immediate_operand(offset);
     instr.size = 2;
 
     return instr;

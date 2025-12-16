@@ -17,7 +17,34 @@ void load_memory_from_file(char *file_name, Seg_Mem *memory) {
     rewind(file);
 
     fread(memory->memory, file_size, 1, file);
-    memory->offset = file_size;
+    memory->size = file_size;
     free(file);
 }
+
+uint8_t *access_memory(Seg_Mem *seg_mem, uint32_t offset) {
+    if (offset > seg_mem->size - 1) {
+        printf("[ERROR]: accessing memory out of bounds in offset %i\n", offset);
+        exit(-1);
+    }
+
+     return seg_mem->memory + seg_mem->base + offset;
+}
+
+Seg_Mem memory_alloc(Seg_Mem *main_memory, size_t size, uint32_t base) {
+    Seg_Mem mem;
+
+    if (base > main_memory->size || base + size > main_memory->size) {
+        int32_t end = base + size;
+        printf("[ERROR]: allocating memory outside of bounds, start %i, end %i\n", base, end);
+        exit(-1);
+    }
+
+    mem.memory = main_memory->memory + base;
+    mem.base = base;
+    mem.size = size;
+    mem.mask = 0xffff;
+
+    return mem;
+}
+
 

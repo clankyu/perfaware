@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "instruction.h"
 
 #define MOV_OPCODE 0b10001000
 #define MOV_MASK   0b11111100
@@ -31,7 +32,7 @@
 #define JNO_OPCODE   0b01110001
 #define JB_OPCODE    0b01110010
 #define JBE_OPCODE   0b01110110
-#define JAE_OPCODE   0b01110011
+#define JNB_OPCODE   0b01110011
 #define JE_OPCODE    0b01110100
 #define JNE_OPCODE   0b01110101
 #define JA_OPCODE    0b01110111
@@ -58,18 +59,6 @@
 
 #define FN_PARAMS uint8_t *buffer, uint16_t index
 
-extern char *reg_field_table[2][8];
-extern char *effective_address_table[3][8];
-extern char *cond_jump_table[16];
-extern char *label_table[8];
-
-typedef struct {
-    char mnemonic[32];
-    char dest[32];
-    char source[32];
-    uint8_t size;
-} Instruction;
-
 typedef struct {
     uint16_t mask;
     uint16_t opcode;
@@ -78,14 +67,7 @@ typedef struct {
 
 extern Opcode_Pattern opcode_patterns[29];
 
-void instruction_print(Instruction *instruction);
-
-typedef struct {
-    uint8_t d, w;
-    uint8_t mod, reg, rm, padding8;
-    uint16_t padding16;
-} Instruction_Params;
-
+static uint32_t cond_jump_table[16];
 Instruction decode_instruction(FN_PARAMS);
 Instruction default_instruction(FN_PARAMS);
 Instruction decode_mov(FN_PARAMS);
@@ -96,7 +78,4 @@ Instruction decode_immediate_acumm(FN_PARAMS);
 Instruction decode_cond_jump(FN_PARAMS);
 Instruction decode_control_transfer(FN_PARAMS);
 
-void format_displacement(char *dest, char *source, int16_t displacement);
-void print_bits(uint8_t *data, uint32_t size);
-
-
+Operation_Type get_cond_jump_type(uint8_t opcode);
