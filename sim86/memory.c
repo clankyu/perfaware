@@ -48,3 +48,19 @@ Seg_Mem memory_alloc(Seg_Mem *main_memory, size_t size, uint32_t base) {
 }
 
 
+void write_u8(uint8_t *dest, uint8_t val) {
+    dest[0] = val;
+}
+
+void write_u16(uint8_t *dest, uint16_t val) {
+    dest[0] = val & 0xFF;
+    dest[1] = val >> 8;
+}
+
+uint8_t read_u8(uint8_t *dest) {
+    return dest[0];
+}
+
+uint16_t read_u16(uint8_t *dest) {
+    return (uint16_t)dest[0] | ((uint16_t)dest[1] << 8);
+}

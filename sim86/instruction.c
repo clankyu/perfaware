@@ -1,10 +1,16 @@
 #include "instruction.h"
+#include <stdint.h>
 
-Instruction_Operand register_operand(Instruction_Params params) {
+Instruction_Operand register_operand(Instruction_Params params, bool mod_rm) {
     Instruction_Operand result = {};
     result.type = Operand_Register;
-    result.reg.w = params.w;
-    result.reg.reg = params.reg;
+    if (!mod_rm) {
+        result.reg.w_mod = params.w;
+        result.reg.reg_rm = params.reg;
+    } else {
+        result.reg.w_mod = params.w;
+        result.reg.reg_rm = params.rm;
+    }
 
     return result;
 }

@@ -9,7 +9,6 @@
 #include "memory.h"
 #include "execute.h"
 #include "instruction.h"
-#include "sim86.h"
 #include "text.h"
 
 Seg_Mem dissasemble_8086(Seg_Mem *main_memory, Seg_Mem *byte_data);
@@ -19,7 +18,6 @@ void init_main_memory(Seg_Mem *main_memory, uint8_t *program_mem);
 int main(int argc, char **argv) {
     uint8_t program_mem[PROGRAM_MEM_SIZE];
 
-    printf("Argument count: %i\n", argc);
     if (argc < 2) {
         printf("No arguments given, exiting program.\n");
         return 0;
@@ -38,7 +36,6 @@ int main(int argc, char **argv) {
     fseek(file, 0L, SEEK_END);
     file_size = ftell(file);
     rewind(file);
-    printf("%s size: %i\n", file_name, file_size);
 
     uint8_t buffer[file_size];
     fread(buffer, file_size, 1, file);
@@ -51,13 +48,20 @@ int main(int argc, char **argv) {
 
     Seg_Mem instructions_mem = dissasemble_8086(&main_memory, &instruction_stream);
 
+    print_bits(buffer, file_size);
+
+    printf("bits 16\n");
     Instruction *instructions = (void*) access_memory(&instructions_mem, 0);
+    printf("DECODING RESULTS:\n");
     for (int i = 0; i < instructions_mem.size / sizeof(Instruction); i++) {
         Instruction instruction = instructions[i];
         Instruction_String_Expression expr = get_instruction_str(&instruction);
         instruction_print(&expr, instruction);
     }
+    printf("\n");
 
+    printf("EXECUTING INSTRUCTIONS:\n");
+    execute_instructions(&main_memory, &instructions_mem);
 
     free(file);
 

@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "decoder.h"
@@ -90,7 +91,7 @@ Instruction decode_mov(FN_PARAMS) {
     params.rm = byte2 & 0b111;
 
     instr.op_type = Op_mov;
-    instr.dest = register_operand(params);
+    instr.dest = register_operand(params, false);
 
     if (params.mod == 0) {
         // exception here according to the manual for rm = 0b110
@@ -98,26 +99,26 @@ Instruction decode_mov(FN_PARAMS) {
             int16_t displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
             instr.source = effective_address_operand(params, displacement);
             instr.size = 4;
+            instr.source.address.is_word = params.w;
         } else {
-            instr.source = register_operand(params);
+            instr.source = effective_address_operand(params, 0);
             instr.size = 2;
         }
-
     } else if (params.mod == 0b01 || params.mod == 0b10) {
         int16_t displacement = 0;
         if (params.mod == 0b01) {
             displacement = (int8_t) buffer[index+2];
             instr.source = effective_address_operand(params, displacement);
             instr.size = 3;
+            instr.source.address.is_word = params.w;
         } else if (params.mod == 0b10) {
             displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
             instr.source = effective_address_operand(params, displacement);
             instr.size = 4;
+            instr.source.address.is_word = params.w;
         }
-
-        //format_displacement(instr.source, effective_address_table[params.mod][params.rm], displacement);
     } else if (params.mod == 0b11) {
-        instr.source = register_operand(params);
+        instr.source = register_operand(params, true);
         instr.size = 2;
     }
 
@@ -139,7 +140,7 @@ Instruction decode_immediate_mov(FN_PARAMS) {
     params.reg = byte & 0b111;
 
     instr.op_type = Op_mov;
-    instr.dest = register_operand(params);
+    instr.dest = register_operand(params, false);
 
     if (params.w) {
         int16_t s = (int16_t)buffer[index+1] | ((int16_t)buffer[index+2] << 8);
@@ -164,6 +165,9 @@ Instruction decode_immediate_arithmetic(FN_PARAMS) {
     params.mod = (buffer[index+1] >> 6) & 0b11;
     params.rm = buffer[index+1] & 0b111;
     instr.size = 2;
+    // we have to set reg to rm because in this specific isntruction we use rm for indexing, this is messy, probably should change the way Reg_Access works
+    // but whatever
+    params.reg = params.rm;
 
     int16_t displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
     int16_t data = 0;
@@ -188,23 +192,27 @@ Instruction decode_immediate_arithmetic(FN_PARAMS) {
                 instr.dest = effective_address_operand(params, displacement);
                 data_idx = index + 4;
                 instr.size += 2;
+                instr.source.address.is_word = params.w;
             } else {
                 instr.dest = effective_address_operand(params, 0);
                 data_idx = index + 2;
+                instr.source.address.is_word = params.w;
             }
             break;
         case 0b01:
             instr.dest = effective_address_operand(params, displacement);
             instr.size++;
             data_idx = index + 3;
+            instr.source.address.is_word = params.w;
             break;
         case 0b10:
             instr.dest = effective_address_operand(params, displacement);
             instr.size += 2;
             data_idx = index + 4;
+            instr.source.address.is_word = params.w;
             break;
         case 0b11:
-            instr.dest = register_operand(params);
+            instr.dest = register_operand(params, false);
             data_idx = index + 2;
             break;
         default:
@@ -254,7 +262,7 @@ Instruction decode_arithmetic(FN_PARAMS) {
             break;
     }
 
-    instr.dest = register_operand(params);
+    instr.dest = register_operand(params, false);
 
     if (params.mod == 0) {
         // exception here according to the manual for rm = 0b110
@@ -262,6 +270,7 @@ Instruction decode_arithmetic(FN_PARAMS) {
             int16_t displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
             instr.source = effective_address_operand(params, displacement);
             instr.size = 4;
+            instr.source.address.is_word = params.w;
         } else {
             instr.source = effective_address_operand(params, 0);
             instr.size = 2;
@@ -277,8 +286,9 @@ Instruction decode_arithmetic(FN_PARAMS) {
         }
 
         instr.source = effective_address_operand(params, displacement);
+        instr.source.address.is_word = params.w;
     } else if (params.mod == 0b11) {
-        instr.source = register_operand(params);
+        instr.source = register_operand(params, true);
         instr.size = 2;
     }
 
@@ -299,7 +309,7 @@ Instruction decode_immediate_acumm(FN_PARAMS) {
     params.reg = 0;
     int16_t data = 0;
 
-    instr.dest = register_operand(params);
+    instr.dest = register_operand(params, false);
 
     uint8_t opcode = byte & IMMD_TO_ACUMM_MASK;
     if (opcode == IMMD_TO_ACUMM_ADD_OPCODE) {

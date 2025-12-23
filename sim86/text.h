@@ -21,11 +21,12 @@ void format_displacement(char *source, int16_t displacement);
 
 static char const *get_op_type_str(Operation_Type type);
 void get_operand_str(char *dest, Instruction_Operand operand);
-void get_register_str(char *dest, Reg_Access reg);
+void get_register_str(char *dest, Instruction_Operand operand);
 void get_effective_address_str(char *dest, Instruction_Operand operand);
 void get_immediate_str(char *dest, Instruction_Operand operand);
 void get_none_str(char *dest);
 
-static void print_operand_state(Operand_State state);
+void print_instruction_and_operand_state(Instruction *instruction, Instruction_String_Expression *expression, Operand_State state);
 
+void print_bits(uint8_t *data, uint32_t size);
 

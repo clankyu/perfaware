@@ -1,6 +1,7 @@
 #pragma once
 
 #include "memory.h"
+#include <stdbool.h>
 
 typedef enum operation_type {
     #define OP(name) Op_##name,
@@ -25,15 +26,21 @@ typedef struct {
     uint8_t mod;
     uint8_t rm;
     int16_t displacement;
+    bool is_word;
 } Effective_Address_Expression;
+
+typedef struct {
+    bool exists;
+    uint8_t *reg;
+} Effective_Address_Operand;
 
 typedef struct {
     int32_t val;
 } Immediate;
 
 typedef struct {
-    uint16_t w;
-    uint16_t reg;
+    uint16_t w_mod;
+    uint16_t reg_rm;
 } Reg_Access;
 
 typedef struct {
@@ -67,7 +74,7 @@ typedef struct {
     uint16_t padding16;
 } Instruction_Params;
 
-Instruction_Operand register_operand(Instruction_Params params);
+Instruction_Operand register_operand(Instruction_Params params, bool mod_rm);
 Instruction_Operand effective_address_operand(Instruction_Params params, uint16_t displacement);
 Instruction_Operand immediate_operand(int16_t value);
 Instruction_Operand none_operand();
