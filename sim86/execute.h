@@ -6,14 +6,16 @@
 #include "memory.h"
 #include "instruction.h"
 
+#define SEGMENT_REGISTER_START 8
+
 #define REG_COUNT 14
 typedef union {
     #define REG_16(i) union {struct{uint8_t i##l; uint8_t i##h;}; uint16_t i##x;}
     struct {
         REG_16(a);
-        REG_16(b);
         REG_16(c);
         REG_16(d);
+        REG_16(b);
         uint16_t sp;
         uint16_t bp;
         uint16_t si;
@@ -25,7 +27,7 @@ typedef union {
         uint16_t ip;
         uint16_t flags;
     };
-    uint8_t reg8[REG_COUNT][2];
+    uint8_t reg8[REG_COUNT * 2];
     uint16_t reg16[REG_COUNT];
 
     #undef REG_16
@@ -33,7 +35,7 @@ typedef union {
 #define FLAGS_REGISTER_8086 14
 static_assert((sizeof(Regs_8086) / sizeof(uint16_t) == REG_COUNT), "Mismatched register sizes");
 
-static Regs_8086 registers_state;
+extern Regs_8086 registers_state;
 static Effective_Address_Operand effective_address_expr_table[8][2];
 
 void op_mov(Seg_Mem *main_memory, Instruction instruction);
@@ -50,6 +52,7 @@ static Seg_Mem get_register_ref(Reg_Access reg_access);
 uint16_t calculate_effective_address(Effective_Address_Expression expr);
 
 void execute_instructions(Seg_Mem *main_memory, Seg_Mem *instructions_mem);
-static Operand_State execute_instruction(Seg_Mem *main_memory, Regs_8086 *regs, Instruction instruction);
+Operand_State execute_instruction(Seg_Mem *main_memory, Instruction instruction);
 
 void print_registers_state();
+void print_real_registers_state();

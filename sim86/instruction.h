@@ -3,17 +3,12 @@
 #include "memory.h"
 #include <stdbool.h>
 
-typedef enum operation_type {
+typedef enum {
     #define OP(name) Op_##name,
     #include "op_list.def"
     #undef OP
     Op_Count, // insane trick oml it's literally the count of enum variants awesome sauce
 } Operation_Type;
-
-typedef struct {
-    Seg_Mem *mem;
-    uint32_t val;
-} Operand_Access;
 
 typedef enum {
     Operand_None,
@@ -35,12 +30,23 @@ typedef struct {
 } Effective_Address_Operand;
 
 typedef struct {
-    int32_t val;
+    uint16_t val;
 } Immediate;
 
+typedef enum {
+    Register_General,
+    Register_Segment
+} Reg_Type;
+
 typedef struct {
-    uint16_t w_mod;
-    uint16_t reg_rm;
+    Reg_Type type;
+    union {
+        struct {
+            uint16_t reg_rm;
+            uint16_t w;
+        };
+        uint32_t sr;
+    };
 } Reg_Access;
 
 typedef struct {
@@ -74,9 +80,10 @@ typedef struct {
     uint16_t padding16;
 } Instruction_Params;
 
-Instruction_Operand register_operand(Instruction_Params params, bool mod_rm);
+Instruction_Operand general_register_operand(Instruction_Params params, bool uses_rm);
+Instruction_Operand segment_register_operand(uint8_t sr);
 Instruction_Operand effective_address_operand(Instruction_Params params, uint16_t displacement);
-Instruction_Operand immediate_operand(int16_t value);
+Instruction_Operand immediate_operand(uint16_t value);
 Instruction_Operand none_operand();
 
 static Operand_State save_operand_state(Instruction_Operand operand, int16_t before, int16_t after);

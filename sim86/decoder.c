@@ -4,7 +4,7 @@
 #include "decoder.h"
 #include "instruction.h"
 
-Opcode_Pattern opcode_patterns[29] = {
+Opcode_Pattern opcode_patterns[31] = {
     { MOV_MASK, MOV_OPCODE, decode_mov },
     { IMMD_OP_MASK, IMMD_OP_OPCODE, decode_immediate_mov },
     { IMMD_OP_ARITHMETIC_MASK, IMMD_OP_ARITHMETIC_OPCODE, decode_immediate_arithmetic },
@@ -34,6 +34,8 @@ Opcode_Pattern opcode_patterns[29] = {
     { LOOPZ_MASK, LOOPZ_OPCODE,  decode_control_transfer },
     { LOOPNZ_MASK, LOOPNZ_OPCODE,  decode_control_transfer },
     { JCXZ_MASK, JCXZ_OPCODE,  decode_control_transfer },
+    { MOV_REGMEM_TO_SEG_MASK, MOV_REGMEM_TO_SEG_OPCODE,  decode_segment_register_mov },
+    { MOV_SEG_TO_REGMEM_MASK, MOV_SEG_TO_REGMEM_OPCODE,  decode_segment_register_mov },
 };
 
 static uint32_t cond_jump_table[16] = {
@@ -91,7 +93,7 @@ Instruction decode_mov(FN_PARAMS) {
     params.rm = byte2 & 0b111;
 
     instr.op_type = Op_mov;
-    instr.dest = register_operand(params, false);
+    instr.dest = general_register_operand(params, false);
 
     if (params.mod == 0) {
         // exception here according to the manual for rm = 0b110
@@ -118,11 +120,64 @@ Instruction decode_mov(FN_PARAMS) {
             instr.source.address.is_word = params.w;
         }
     } else if (params.mod == 0b11) {
-        instr.source = register_operand(params, true);
+        instr.source = general_register_operand(params, true);
         instr.size = 2;
     }
 
     if (params.d == 0) {
+        Instruction_Operand temp = instr.dest;
+        instr.dest = instr.source;
+        instr.source = temp;
+    }
+
+    return instr;
+}
+
+Instruction decode_segment_register_mov(FN_PARAMS) {
+    Instruction instr;
+    Instruction_Params params;
+
+    uint8_t byte1 = buffer[index];
+    uint8_t byte2 = buffer[index + 1];
+
+    params.w = 1;
+    params.mod = (byte2 >> 6) & 0b11;
+    params.rm = byte2 & 0b111;
+    uint8_t sr = (byte2 >> 3) & 0b11;
+
+    instr.op_type = Op_mov;
+    instr.dest = segment_register_operand(sr);
+
+    if (params.mod == 0) {
+        // exception here according to the manual for rm = 0b110
+        if (params.rm == 0b110) {
+            int16_t displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
+            instr.source = effective_address_operand(params, displacement);
+            instr.size = 4;
+            instr.source.address.is_word = params.w;
+        } else {
+            instr.source = effective_address_operand(params, 0);
+            instr.size = 2;
+        }
+    } else if (params.mod == 0b01 || params.mod == 0b10) {
+        int16_t displacement = 0;
+        if (params.mod == 0b01) {
+            displacement = (int8_t) buffer[index+2];
+            instr.source = effective_address_operand(params, displacement);
+            instr.size = 3;
+            instr.source.address.is_word = params.w;
+        } else if (params.mod == 0b10) {
+            displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
+            instr.source = effective_address_operand(params, displacement);
+            instr.size = 4;
+            instr.source.address.is_word = params.w;
+        }
+    } else if (params.mod == 0b11) {
+        instr.source = general_register_operand(params, true);
+        instr.size = 2;
+    }
+
+    if (buffer[index] == MOV_SEG_TO_REGMEM_OPCODE) {
         Instruction_Operand temp = instr.dest;
         instr.dest = instr.source;
         instr.source = temp;
@@ -140,14 +195,14 @@ Instruction decode_immediate_mov(FN_PARAMS) {
     params.reg = byte & 0b111;
 
     instr.op_type = Op_mov;
-    instr.dest = register_operand(params, false);
+    instr.dest = general_register_operand(params, false);
 
     if (params.w) {
-        int16_t s = (int16_t)buffer[index+1] | ((int16_t)buffer[index+2] << 8);
+        uint16_t s = (int16_t)buffer[index+1] | ((int16_t)buffer[index+2] << 8);
         instr.source = immediate_operand(s);
         instr.size = 3;
     } else {
-        int16_t s = buffer[index+1];
+        uint16_t s = buffer[index+1];
         instr.source = immediate_operand(s);
         instr.size = 2;
     }
@@ -212,7 +267,7 @@ Instruction decode_immediate_arithmetic(FN_PARAMS) {
             instr.source.address.is_word = params.w;
             break;
         case 0b11:
-            instr.dest = register_operand(params, false);
+            instr.dest = general_register_operand(params, false);
             data_idx = index + 2;
             break;
         default:
@@ -262,7 +317,7 @@ Instruction decode_arithmetic(FN_PARAMS) {
             break;
     }
 
-    instr.dest = register_operand(params, false);
+    instr.dest = general_register_operand(params, false);
 
     if (params.mod == 0) {
         // exception here according to the manual for rm = 0b110
@@ -288,7 +343,7 @@ Instruction decode_arithmetic(FN_PARAMS) {
         instr.source = effective_address_operand(params, displacement);
         instr.source.address.is_word = params.w;
     } else if (params.mod == 0b11) {
-        instr.source = register_operand(params, true);
+        instr.source = general_register_operand(params, true);
         instr.size = 2;
     }
 
@@ -309,7 +364,7 @@ Instruction decode_immediate_acumm(FN_PARAMS) {
     params.reg = 0;
     int16_t data = 0;
 
-    instr.dest = register_operand(params, false);
+    instr.dest = general_register_operand(params, false);
 
     uint8_t opcode = byte & IMMD_TO_ACUMM_MASK;
     if (opcode == IMMD_TO_ACUMM_ADD_OPCODE) {

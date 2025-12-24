@@ -6,6 +6,12 @@
 #define MOV_OPCODE 0b10001000
 #define MOV_MASK   0b11111100
 
+#define MOV_REGMEM_TO_SEG_OPCODE 0b10001110
+#define MOV_REGMEM_TO_SEG_MASK 0b11111111
+
+#define MOV_SEG_TO_REGMEM_OPCODE 0b10001100
+#define MOV_SEG_TO_REGMEM_MASK 0b11111111
+
 #define IMMD_OP_OPCODE 0b10110000
 #define IMMD_OP_MASK   0b11110000
 
@@ -65,12 +71,13 @@ typedef struct {
     Instruction (*decode_fn)(uint8_t*, uint16_t);
 } Opcode_Pattern;
 
-extern Opcode_Pattern opcode_patterns[29];
+extern Opcode_Pattern opcode_patterns[31];
 
 static uint32_t cond_jump_table[16];
 Instruction decode_instruction(FN_PARAMS);
 Instruction default_instruction(FN_PARAMS);
 Instruction decode_mov(FN_PARAMS);
+Instruction decode_segment_register_mov(FN_PARAMS);
 Instruction decode_immediate_mov(FN_PARAMS);
 Instruction decode_immediate_arithmetic(FN_PARAMS);
 Instruction decode_arithmetic(FN_PARAMS);

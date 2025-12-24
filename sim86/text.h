@@ -7,6 +7,7 @@ static char *reg_field_table[2][8];
 static char *effective_address_table[3][8];
 static char *cond_jump_table_str[16];
 static char *label_table[8];
+static char *segment_register_table[4];
 
 typedef struct {
     char mnemonic[32];
@@ -19,7 +20,7 @@ void instruction_print(Instruction_String_Expression *expression, Instruction in
 
 void format_displacement(char *source, int16_t displacement);
 
-static char const *get_op_type_str(Operation_Type type);
+char const *get_op_type_str(Operation_Type type);
 void get_operand_str(char *dest, Instruction_Operand operand);
 void get_register_str(char *dest, Instruction_Operand operand);
 void get_effective_address_str(char *dest, Instruction_Operand operand);

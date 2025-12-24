@@ -1,11 +1,12 @@
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include "instruction.h"
 #include "memory.h"
 #include "text.h"
 #include "execute.h"
 
-static Regs_8086 registers_state = {};
+Regs_8086 registers_state = {};
 
 #define reg(field) { true, (uint8_t*)&registers_state.field }
 #define none { false, 0x0 }
@@ -22,15 +23,21 @@ static Effective_Address_Operand effective_address_expr_table[8][2] = {
 #undef reg
 #undef none
 
+// i just realized this is kind of broken since you execute as you decode
 void execute_instructions(Seg_Mem *main_memory, Seg_Mem *instructions_mem) {
     uint32_t operand_state_base_ptr = instructions_mem->base + instructions_mem->size;
     const int32_t instruction_count = instructions_mem->size / sizeof(Instruction);
 
     Instruction *instructions = (void*)access_memory(instructions_mem, 0);
     for (int i = 0; i < instructions_mem->size / sizeof(Instruction); i++) {
-        Seg_Mem operand_state_mem = memory_alloc(main_memory, sizeof(Operand_State), operand_state_base_ptr);
+        registers_state.ip++;
+
         Instruction instruction = instructions[i];
-        Operand_State operand_state = execute_instruction(main_memory, &registers_state, instruction);
+
+        Seg_Mem operand_state_mem = memory_alloc(main_memory, sizeof(Operand_State), operand_state_base_ptr);
+        Operand_State operand_state = execute_instruction(main_memory, instruction);
+        memcpy(operand_state_mem.memory, &operand_state, sizeof(Operand_State));
+
         Instruction_String_Expression expr = get_instruction_str(&instruction);
         print_instruction_and_operand_state(&instruction, &expr, operand_state);
     }
@@ -40,7 +47,7 @@ void execute_instructions(Seg_Mem *main_memory, Seg_Mem *instructions_mem) {
     print_registers_state();
 }
 
-static Operand_State execute_instruction(Seg_Mem *main_memory, Regs_8086 *regs, Instruction instruction) {
+Operand_State execute_instruction(Seg_Mem *main_memory, Instruction instruction) {
     Operand_State state = {};
     state.operand = instruction.dest;
     state.before = get_operand_value(main_memory, instruction.dest);
@@ -125,7 +132,7 @@ static void set_operand_value(Seg_Mem *main_memory, Instruction_Operand operand,
             write_u16(ptr, val);
         }
     } else if (operand.type == Operand_Memory) {
-        uint16_t address = calculate_effective_address(operand.address);
+        uint16_t address = calculate_effective_address(operand.address) + registers_state.ds;
         uint8_t *ptr = access_memory(main_memory, address);
 
         if (operand.address.is_word) {
@@ -142,14 +149,9 @@ static void set_operand_value(Seg_Mem *main_memory, Instruction_Operand operand,
 
 static uint16_t get_operand_value(Seg_Mem *main_memory, Instruction_Operand operand) {
     Seg_Mem mem = get_operand_ref(main_memory, operand);
+    //printf("getting value from address: %p\n", mem.memory);
 
-    if (mem.size == 1) {
-        return read_u8(mem.memory);
-    } else {
-        return read_u16(mem.memory);
-    }
-
-    return 0;
+    return (mem.size == 1) ? read_u8(mem.memory) : read_u16(mem.memory);
 }
 
 static Seg_Mem get_operand_ref(Seg_Mem *main_memory, Instruction_Operand operand) {
@@ -157,7 +159,7 @@ static Seg_Mem get_operand_ref(Seg_Mem *main_memory, Instruction_Operand operand
     if (operand.type == Operand_Register) {
         mem = get_register_ref(operand.reg);
     } else if (operand.type == Operand_Memory) { // gonna have to implement byte and word accesses
-        uint16_t address = calculate_effective_address(operand.address);
+        uint16_t address = calculate_effective_address(operand.address) + registers_state.ds;
         mem.memory = access_memory(main_memory, address);
         mem.base = address;
         mem.mask = 0xFF;
@@ -178,13 +180,28 @@ static Seg_Mem get_operand_ref(Seg_Mem *main_memory, Instruction_Operand operand
 
 static Seg_Mem get_register_ref(Reg_Access reg_access) {
     Seg_Mem mem = {};
-    if (reg_access.w_mod == 0) {
-        mem.memory = &registers_state.reg8[reg_access.reg_rm][reg_access.w_mod];
-        mem.base = 0;
-        mem.mask = 0xFF;
-        mem.size = 1;
+    if (reg_access.type == Register_General) {
+        if (reg_access.w == 0) {
+            uint8_t access = 0;
+            // i spent way too long on this dumb ass thing just THINK MARK, THINK
+            if (reg_access.reg_rm < 4) {
+                access = reg_access.reg_rm * 2;
+            } else {
+                access = (reg_access.reg_rm - 4) * 2 + 1;
+            }
+
+            mem.memory = (uint8_t*)&registers_state.reg8[access];
+            mem.base = 0;
+            mem.mask = 0xFF;
+            mem.size = 1;
+        } else {
+            mem.memory = (uint8_t*)&registers_state.reg16[reg_access.reg_rm];
+            mem.base = 0;
+            mem.mask = 0xFF;
+            mem.size = 2;
+        }
     } else {
-        mem.memory = (uint8_t*)&registers_state.reg16[reg_access.reg_rm];
+        mem.memory = (uint8_t*)&registers_state.reg16[SEGMENT_REGISTER_START + reg_access.sr];
         mem.base = 0;
         mem.mask = 0xFF;
         mem.size = 2;
@@ -219,4 +236,17 @@ void print_registers_state() {
     printf(REG_FMT(bp), REG_ARGS(bp));
     printf(REG_FMT(si), REG_ARGS(si));
     printf(REG_FMT(di), REG_ARGS(di));
+    printf(REG_FMT(cs), REG_ARGS(cs));
+    printf(REG_FMT(es), REG_ARGS(es));
+    printf(REG_FMT(ss), REG_ARGS(ss));
+    printf(REG_FMT(ds), REG_ARGS(ds));
+    printf(REG_FMT(ip), REG_ARGS(ip));
+}
+
+void print_real_registers_state() {
+    for (int i = 0; i < REG_COUNT; i++) {
+        printf("ALL: 0x%X ", registers_state.reg16[i]);
+        printf("HIGH: 0x%X ", registers_state.reg8[i*2+1]);
+        printf("LOW: 0x%X\n", registers_state.reg8[i*2]);
+    }
 }

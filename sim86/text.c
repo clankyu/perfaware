@@ -31,9 +31,8 @@ static char *cond_jump_table_str[16] = {
     "js", "jns", "jp", "jnp", "jl", "jnl", "jle", "ja"
 };
 
-static char *label_table[8] = {
-    "label0", "label1", "label2", "label3",
-    "label4", "label5", "label6", "label7"
+static char *segment_register_table[4] = {
+    "es", "cs", "ss", "ds"
 };
 
 Instruction_String_Expression get_instruction_str(Instruction *instruction) {
@@ -57,7 +56,7 @@ void format_displacement(char *source, int16_t displacement) {
     snprintf(source, 32, "%s%d]", source, displacement);
 }
 
-static char const *get_op_type_str(Operation_Type type) {
+char const *get_op_type_str(Operation_Type type) {
     return op_type_table[type];
 }
 
@@ -81,7 +80,11 @@ void get_operand_str(char *dest, Instruction_Operand operand) {
 }
 
 void get_register_str(char *dest, Instruction_Operand operand) {
-    strcpy(dest, reg_field_table[operand.reg.w_mod][operand.reg.reg_rm]);
+    if (operand.reg.type == Register_General) {
+        strcpy(dest, reg_field_table[operand.reg.w][operand.reg.reg_rm]);
+    } else {
+        strcpy(dest, segment_register_table[operand.reg.sr]);
+    }
 }
 
 void get_effective_address_str(char *dest, Instruction_Operand operand) {
@@ -118,11 +121,10 @@ void print_instruction_and_operand_state(Instruction *instruction, Instruction_S
     char operand[32];
     get_operand_str(operand, state.operand);
 
-    //printf("%s : %d -> %d\n", operand, state.before, state.after);
     if (instruction->source.type == Operand_None) {
         printf("%s %s\n", expression->mnemonic, expression->dest);
     } else {
-        printf("%s %s, %s { %s : %d -> %d }\n", expression->mnemonic, expression->dest, expression->source, operand, state.before, state.after);
+        printf("%s %s, %s { %s : 0x%X -> 0x%X }\n", expression->mnemonic, expression->dest, expression->source, operand, state.before, state.after);
     }
 }
 
