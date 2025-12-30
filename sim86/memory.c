@@ -1,4 +1,5 @@
 #include "memory.h"
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,11 +15,15 @@ void load_memory_from_file(char *file_name, Seg_Mem *memory) {
 
     fseek(file, 0L, SEEK_END);
     file_size = ftell(file);
+    assert(file_size <= 1000000);
     rewind(file);
 
     fread(memory->memory, file_size, 1, file);
     memory->size = file_size;
-    free(file);
+    memory->base = 0;
+    memory->mask = 0xFFFF;
+
+    fclose(file);
 }
 
 uint8_t *access_memory(Seg_Mem *seg_mem, uint32_t offset) {

@@ -105,14 +105,26 @@ Operand_State execute_instruction(Seg_Mem *main_memory, Instruction instruction)
         case Op_Unimplemented:
             break;
         default:
-            printf("UNIMPLEMENTED\n");
+            printf("UNIMPLEMENTED SIMULATION\n");
     }
 
     state.after = get_operand_value(main_memory, instruction.dest);
     return state;
 }
 
-void op_mov(Seg_Mem *main_memory, Instruction instruction) {
+static void mov(Seg_Mem *main_memory, Instruction instruction) {
+
+}
+
+static void add(Seg_Mem *main_memory, Instruction instruction) {
+
+}
+
+static void sub(Seg_Mem *main_memory, Instruction instruction) {
+
+}
+
+static void cmp(Seg_Mem *main_memory, Instruction instruction) {
 
 }
 

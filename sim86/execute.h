@@ -38,10 +38,10 @@ static_assert((sizeof(Regs_8086) / sizeof(uint16_t) == REG_COUNT), "Mismatched r
 extern Regs_8086 registers_state;
 static Effective_Address_Operand effective_address_expr_table[8][2];
 
-void op_mov(Seg_Mem *main_memory, Instruction instruction);
-void op_add(Seg_Mem *main_memory, Instruction instruction);
-void op_sub(Seg_Mem *main_memory, Instruction instruction);
-void op_cmp(Seg_Mem *main_memory, Instruction instruction);
+static void mov(Seg_Mem *main_memory, Instruction instruction);
+static void add(Seg_Mem *main_memory, Instruction instruction);
+static void sub(Seg_Mem *main_memory, Instruction instruction);
+static void cmp(Seg_Mem *main_memory, Instruction instruction);
 
 static uint16_t get_operand_value(Seg_Mem *main_memory, Instruction_Operand operand);
 static void set_operand_value(Seg_Mem *main_memory, Instruction_Operand operand, uint16_t val);
