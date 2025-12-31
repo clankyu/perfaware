@@ -65,6 +65,11 @@ typedef struct {
 } Operand_State;
 
 typedef struct {
+    uint16_t before;
+    uint16_t after;
+} Flags_State;
+
+typedef struct {
     uint16_t address;
 
     uint8_t size;

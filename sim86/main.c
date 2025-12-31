@@ -78,6 +78,7 @@ int main(int argc, char **argv) {
         sim8086(&main_memory, &instruction_stream);
         printf("\nFinal registers:\n");
         print_registers_state();
+        print_flags_state();
     } else {
         Seg_Mem instructions_mem = dissasemble_8086(&main_memory, &instruction_stream);
         print_bits(buffer, file_size);
@@ -104,6 +105,7 @@ int main(int argc, char **argv) {
         fclose(file_result);
     }
 
+    printf("\n");
     printf("Compiling generated assembly:\n");
     if (compile_result_asm() != 0) {
         printf("Failed to compile generated assembly.\n");
@@ -138,10 +140,15 @@ void sim8086(Seg_Mem *main_memory, Seg_Mem *byte_data) {
             if ((opcode_byte & opcode_patterns[j].mask) == opcode_patterns[j].opcode) {
                 pattern_matched = true;
 
+                Flags_State flags_state = {};
+                flags_state.before = registers_state.flags;
+
                 Instruction instruction = opcode_patterns[j].decode_fn(main_memory->memory + registers_state.cs, registers_state.ip);
                 Operand_State instruction_state = execute_instruction(main_memory, instruction);
+
+                flags_state.after = registers_state.flags;
                 Instruction_String_Expression expression = get_instruction_str(&instruction);
-                print_instruction_and_operand_state(&instruction, &expression, instruction_state);
+                print_instruction_and_operand_state(&instruction, &expression, instruction_state, flags_state);
 
                 if (instruction.source.type == Operand_None) {
                     fprintf(file_result, "%s %s\n", expression.mnemonic, expression.dest);

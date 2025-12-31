@@ -17,6 +17,7 @@ typedef struct {
 
 Instruction_String_Expression get_instruction_str(Instruction *instruction);
 void instruction_print(Instruction_String_Expression *expression, Instruction instruction);
+void get_flags_str(char *dest, uint16_t flags);
 
 void format_displacement(char *source, int16_t displacement);
 
@@ -27,7 +28,7 @@ void get_effective_address_str(char *dest, Instruction_Operand operand);
 void get_immediate_str(char *dest, Instruction_Operand operand);
 void get_none_str(char *dest);
 
-void print_instruction_and_operand_state(Instruction *instruction, Instruction_String_Expression *expression, Operand_State state);
+void print_instruction_and_operand_state(Instruction *instruction, Instruction_String_Expression *expression, Operand_State operand_state, Flags_State flags_state);
 
 void print_bits(uint8_t *data, uint32_t size);
 

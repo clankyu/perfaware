@@ -52,6 +52,22 @@ void instruction_print(Instruction_String_Expression *expression, Instruction in
     }
 }
 
+void get_flags_str(char *dest, uint16_t flags) {
+    char *p = dest;
+
+    if (flags & FLAG_OF) *p++ = 'O';
+    if (flags & FLAG_DF) *p++ = 'D';
+    if (flags & FLAG_IF) *p++ = 'I';
+    if (flags & FLAG_TF) *p++ = 'T';
+    if (flags & FLAG_SF) *p++ = 'S';
+    if (flags & FLAG_ZF) *p++ = 'Z';
+    if (flags & FLAG_AF) *p++ = 'A';
+    if (flags & FLAG_PF) *p++ = 'P';
+    if (flags & FLAG_CF) *p++ = 'C';
+
+    *p = '\0';
+}
+
 void format_displacement(char *source, int16_t displacement) {
     snprintf(source, 32, "%s%d]", source, displacement);
 }
@@ -117,14 +133,21 @@ void get_none_str(char *dest) {
     strcpy(dest, "\0");
 }
 
-void print_instruction_and_operand_state(Instruction *instruction, Instruction_String_Expression *expression, Operand_State state) {
+void print_instruction_and_operand_state(Instruction *instruction, Instruction_String_Expression *expression, Operand_State operand_state, Flags_State flags_state) {
     char operand[32];
-    get_operand_str(operand, state.operand);
+    get_operand_str(operand, operand_state.operand);
+
+    char flags_before[32];
+    char flags_after[32];
+    get_flags_str(flags_before, flags_state.before);
+    get_flags_str(flags_after, flags_state.after);
 
     if (instruction->source.type == Operand_None) {
         printf("%s %s\n", expression->mnemonic, expression->dest);
     } else {
-        printf("%s %s, %s { %s : 0x%X -> 0x%X }\n", expression->mnemonic, expression->dest, expression->source, operand, state.before, state.after);
+        printf("%s %s, %s { %s : 0x%X -> 0x%X | flags : %s -> %s }\n",
+               expression->mnemonic, expression->dest, expression->source, operand, operand_state.before, operand_state.after,
+               flags_before, flags_after);
     }
 }
 

@@ -39,7 +39,8 @@ void execute_instructions(Seg_Mem *main_memory, Seg_Mem *instructions_mem) {
         memcpy(operand_state_mem.memory, &operand_state, sizeof(Operand_State));
 
         Instruction_String_Expression expr = get_instruction_str(&instruction);
-        print_instruction_and_operand_state(&instruction, &expr, operand_state);
+        Flags_State broken_ignore = {};
+        print_instruction_and_operand_state(&instruction, &expr, operand_state, broken_ignore);
     }
 
     printf("\n");
@@ -49,82 +50,191 @@ void execute_instructions(Seg_Mem *main_memory, Seg_Mem *instructions_mem) {
 
 Operand_State execute_instruction(Seg_Mem *main_memory, Instruction instruction) {
     Operand_State state = {};
+    uint16_t dest_value = get_operand_value(main_memory, instruction.dest);
+    uint16_t source_value = get_operand_value(main_memory, instruction.source);
+
+    Seg_Mem dest_ptr = get_operand_ref(main_memory, instruction.dest);
+    uint8_t dest_size = dest_ptr.size;
+
     state.operand = instruction.dest;
-    state.before = get_operand_value(main_memory, instruction.dest);
+    state.before = dest_value;
+
 
     switch (instruction.op_type) {
-        case Op_mov:
-            set_operand_value(main_memory, instruction.dest, get_operand_value(main_memory, instruction.source));
-            break;
-        case Op_add:
-            break;
-        case Op_sub:
-            break;
-        case Op_cmp:
-            break;
-        case Op_jo:
-            break;
-        case Op_jno:
-            break;
-        case Op_jb:
-            break;
-        case Op_jnb:
-            break;
-        case Op_je:
-            break;
-        case Op_jne:
-            break;
-        case Op_jbe:
-            break;
-        case Op_ja:
-            break;
-        case Op_js:
-            break;
-        case Op_jns:
-            break;
-        case Op_jp:
-            break;
-        case Op_jnp:
-            break;
-        case Op_jl:
-            break;
-        case Op_jnl:
-            break;
-        case Op_jle:
-            break;
-        case Op_jg:
-            break;
-        case Op_loop:
-            break;
-        case Op_loopz:
-            break;
-        case Op_loopnz:
-            break;
-        case Op_jcxz:
-            break;
-        case Op_Unimplemented:
-            break;
-        default:
+        case (Op_mov): {
+            mov(main_memory, instruction);
+        } break;
+
+        case (Op_add): {
+            add(main_memory, instruction);
+            state.after = get_operand_value(main_memory, instruction.dest);
+            check_common_flags(main_memory, instruction.dest);
+            if (dest_size == 1)
+                UPDATE_FLAG(FLAG_CF, (dest_value + source_value) & ~0xFFu);
+            else
+                UPDATE_FLAG(FLAG_CF, (dest_value + source_value) & ~0xFFFFu);
+            uint16_t sign_bit = get_signed_bit(dest_size);
+            uint16_t of = ((~(dest_value ^ source_value) & (dest_value ^ state.after)) & sign_bit) != 0;
+            uint16_t af = ((dest_value ^ source_value ^ state.after) & 0x10) != 0;
+            UPDATE_FLAG(FLAG_OF, of);
+            UPDATE_FLAG(FLAG_AF, af);
+        } break;
+
+        case (Op_sub): {
+            sub(main_memory, instruction);
+            state.after = get_operand_value(main_memory, instruction.dest);
+            check_common_flags(main_memory, instruction.dest);
+            UPDATE_FLAG(FLAG_CF, source_value > dest_value);
+
+            uint16_t sign_bit = get_signed_bit(dest_size);
+            uint16_t of = (((dest_value ^ source_value) & (dest_value ^ state.after)) & sign_bit) != 0;
+            uint16_t af = ((dest_value ^ source_value ^ state.after) & 0x10) != 0;
+            UPDATE_FLAG(FLAG_OF, of);
+            UPDATE_FLAG(FLAG_AF, af);
+        } break;
+
+        case (Op_cmp): {
+            uint16_t result = dest_value - source_value;
+            state.after = result;
+            Instruction_Operand result_operand = immediate_operand(result);
+
+            check_common_flags(main_memory, result_operand);
+            UPDATE_FLAG(FLAG_CF, source_value > dest_value);
+
+            uint16_t sign_bit = get_signed_bit(dest_size);
+            uint16_t of = (((dest_value ^ source_value) & (dest_value ^ state.after)) & sign_bit) != 0;
+            uint16_t af = ((dest_value ^ source_value ^ state.after) & 0x10) != 0;
+            UPDATE_FLAG(FLAG_OF, of);
+            UPDATE_FLAG(FLAG_AF, af);
+        } break;
+
+        case (Op_jo): {
+        } break;
+
+        case (Op_jno): {
+        } break;
+
+        case (Op_jb): {
+        } break;
+
+        case (Op_jnb): {
+        } break;
+
+        case (Op_je): {
+        } break;
+
+        case (Op_jne): {
+        } break;
+
+        case (Op_jbe): {
+        } break;
+
+        case (Op_ja): {
+        } break;
+
+        case (Op_js): {
+        } break;
+
+        case (Op_jns): {
+        } break;
+
+        case (Op_jp): {
+        } break;
+
+        case (Op_jnp): {
+        } break;
+
+        case (Op_jl): {
+        } break;
+
+        case (Op_jnl): {
+        } break;
+
+        case (Op_jle): {
+        } break;
+
+        case (Op_jg): {
+        } break;
+
+        case (Op_loop): {
+        } break;
+
+        case (Op_loopz): {
+        } break;
+
+        case (Op_loopnz): {
+        } break;
+
+        case (Op_jcxz): {
+        } break;
+
+        case (Op_Unimplemented): {
+        } break;
+
+        default: {
             printf("UNIMPLEMENTED SIMULATION\n");
+        } break;
     }
 
     state.after = get_operand_value(main_memory, instruction.dest);
     return state;
 }
 
-static void mov(Seg_Mem *main_memory, Instruction instruction) {
+static void check_common_flags(Seg_Mem *main_memory, Instruction_Operand result) {
+    uint16_t operand_value = 0;
+    Seg_Mem operand_mem = get_operand_ref(main_memory, result);
+    if (operand_mem.size == 1) {
+        uint8_t val = read_u8(operand_mem.memory);
+        operand_value = val;
+        UPDATE_FLAG(FLAG_SF, val >> 7);
+    } else {
+        uint16_t val = read_u16(operand_mem.memory);
+        operand_value = val;
+        UPDATE_FLAG(FLAG_SF, val >> 15);
+    }
 
+    UPDATE_FLAG(FLAG_ZF, operand_value == 0);
+
+    uint16_t bits_set = 0;
+    for (int i = 0; i < 8; i++) {
+        if ((operand_value >> i) & 1) {
+            bits_set++;
+        }
+    }
+    UPDATE_FLAG(FLAG_PF, bits_set % 2 == 0);
+}
+
+uint16_t get_signed_bit(uint16_t size) {
+    return (size == 1) ? 0x80 : 0x8000;
+}
+
+static void mov(Seg_Mem *main_memory, Instruction instruction) {
+    set_operand_value(main_memory, instruction.dest, get_operand_value(main_memory, instruction.source));
 }
 
 static void add(Seg_Mem *main_memory, Instruction instruction) {
-
+    uint16_t dest_value = get_operand_value(main_memory, instruction.dest);
+    uint16_t source_value = get_operand_value(main_memory, instruction.source);
+    uint16_t result = dest_value + source_value;
+    set_operand_value(main_memory, instruction.dest, result);
 }
 
 static void sub(Seg_Mem *main_memory, Instruction instruction) {
-
+    uint16_t dest_value = get_operand_value(main_memory, instruction.dest);
+    uint16_t source_value = get_operand_value(main_memory, instruction.source);
+    uint16_t result = dest_value - source_value;
+    set_operand_value(main_memory, instruction.dest, result);
 }
 
 static void cmp(Seg_Mem *main_memory, Instruction instruction) {
+    uint16_t dest_value = get_operand_value(main_memory, instruction.dest);
+    uint16_t source_value = get_operand_value(main_memory, instruction.source);
+    uint16_t result = dest_value + source_value;
+    Instruction_Operand result_operand = immediate_operand(result);
+    check_common_flags(main_memory, result_operand);
+}
+
+static void conditional_jump(Seg_Mem *main_memory, int8_t displacement, bool should_jump) {
 
 }
 
@@ -161,7 +271,6 @@ static void set_operand_value(Seg_Mem *main_memory, Instruction_Operand operand,
 
 static uint16_t get_operand_value(Seg_Mem *main_memory, Instruction_Operand operand) {
     Seg_Mem mem = get_operand_ref(main_memory, operand);
-    //printf("getting value from address: %p\n", mem.memory);
 
     return (mem.size == 1) ? read_u8(mem.memory) : read_u16(mem.memory);
 }
@@ -261,4 +370,10 @@ void print_real_registers_state() {
         printf("HIGH: 0x%X ", registers_state.reg8[i*2+1]);
         printf("LOW: 0x%X\n", registers_state.reg8[i*2]);
     }
+}
+
+void print_flags_state() {
+    char flags[32];
+    get_flags_str(flags, registers_state.flags);
+    printf("flags: %s\n", flags);
 }
