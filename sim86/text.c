@@ -44,8 +44,10 @@ Instruction_String_Expression get_instruction_str(Instruction *instruction) {
     return expr;
 }
 
-void instruction_print(Instruction_String_Expression *expression, Instruction instruction) {
-    if (instruction.source.type == Operand_None) {
+void instruction_print(Instruction instruction, Instruction_String_Expression *expression) {
+    if (instruction.op_type >= Op_je && instruction.op_type <= Op_jcxz) {
+        printf("%s .L%u\n", expression->mnemonic, instruction.address + instruction.size + (int8_t)(instruction.dest.immediate.val & 0xFF));
+    } else if (strcmp(expression->source, "\0") == 0) {
         printf("%s %s\n", expression->mnemonic, expression->dest);
     } else {
         printf("%s %s, %s\n", expression->mnemonic, expression->dest, expression->source);
@@ -126,7 +128,12 @@ void get_effective_address_str(char *dest, Instruction_Operand operand) {
 }
 
 void get_immediate_str(char *dest, Instruction_Operand operand) {
-    snprintf(dest, 32, "%d", operand.immediate.val);
+    if (operand.immediate.is_signed) {
+        int16_t signed_val = (int16_t) operand.immediate.val;
+        snprintf(dest, 32, "%d", signed_val);
+    } else {
+        snprintf(dest, 32, "%d", operand.immediate.val);
+    }
 }
 
 void get_none_str(char *dest) {
@@ -153,7 +160,6 @@ void print_instruction_and_operand_state(Instruction *instruction, Instruction_S
 
 void print_bits(uint8_t *data, uint32_t size) {
     for (size_t i = 0; i < size; i++) {
-        printf("bit %i: ", (int) i);
         for (int bit = 7; bit >= 0; bit--) {
             printf("%d", (data[i] >> bit) & 1);
         }

@@ -1,6 +1,5 @@
 #include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
 #include "instruction.h"
 #include "memory.h"
 #include "text.h"
@@ -23,31 +22,6 @@ static Effective_Address_Operand effective_address_expr_table[8][2] = {
 #undef reg
 #undef none
 
-// i just realized this is kind of broken since you execute as you decode
-void execute_instructions(Seg_Mem *main_memory, Seg_Mem *instructions_mem) {
-    uint32_t operand_state_base_ptr = instructions_mem->base + instructions_mem->size;
-    const int32_t instruction_count = instructions_mem->size / sizeof(Instruction);
-
-    Instruction *instructions = (void*)access_memory(instructions_mem, 0);
-    for (int i = 0; i < instructions_mem->size / sizeof(Instruction); i++) {
-        registers_state.ip++;
-
-        Instruction instruction = instructions[i];
-
-        Seg_Mem operand_state_mem = memory_alloc(main_memory, sizeof(Operand_State), operand_state_base_ptr);
-        Operand_State operand_state = execute_instruction(main_memory, instruction);
-        memcpy(operand_state_mem.memory, &operand_state, sizeof(Operand_State));
-
-        Instruction_String_Expression expr = get_instruction_str(&instruction);
-        Flags_State broken_ignore = {};
-        print_instruction_and_operand_state(&instruction, &expr, operand_state, broken_ignore);
-    }
-
-    printf("\n");
-    printf("Final registers:\n");
-    print_registers_state();
-}
-
 Operand_State execute_instruction(Seg_Mem *main_memory, Instruction instruction) {
     Operand_State state = {};
     uint16_t dest_value = get_operand_value(main_memory, instruction.dest);
@@ -56,9 +30,20 @@ Operand_State execute_instruction(Seg_Mem *main_memory, Instruction instruction)
     Seg_Mem dest_ptr = get_operand_ref(main_memory, instruction.dest);
     uint8_t dest_size = dest_ptr.size;
 
+    int8_t displacement = (int8_t) (dest_value & 0xFF);
+
     state.operand = instruction.dest;
     state.before = dest_value;
 
+    uint8_t CF = (registers_state.flags & FLAG_CF) != 0;
+    uint8_t PF = (registers_state.flags & FLAG_PF) != 0;
+    uint8_t AF = (registers_state.flags & FLAG_AF) != 0;
+    uint8_t ZF = (registers_state.flags & FLAG_ZF) != 0;
+    uint8_t SF = (registers_state.flags & FLAG_SF) != 0;
+    uint8_t OF = (registers_state.flags & FLAG_OF) != 0;
+    uint8_t IF = (registers_state.flags & FLAG_IF) != 0;
+    uint8_t DF = (registers_state.flags & FLAG_DF) != 0;
+    uint8_t TF = (registers_state.flags & FLAG_TF) != 0;
 
     switch (instruction.op_type) {
         case (Op_mov): {
@@ -96,7 +81,7 @@ Operand_State execute_instruction(Seg_Mem *main_memory, Instruction instruction)
         case (Op_cmp): {
             uint16_t result = dest_value - source_value;
             state.after = result;
-            Instruction_Operand result_operand = immediate_operand(result);
+            Instruction_Operand result_operand = immediate_operand(result, false);
 
             check_common_flags(main_memory, result_operand);
             UPDATE_FLAG(FLAG_CF, source_value > dest_value);
@@ -109,63 +94,91 @@ Operand_State execute_instruction(Seg_Mem *main_memory, Instruction instruction)
         } break;
 
         case (Op_jo): {
+            conditional_jump(main_memory, displacement, OF);
         } break;
 
         case (Op_jno): {
+            conditional_jump(main_memory, displacement, !OF);
         } break;
 
         case (Op_jb): {
+            conditional_jump(main_memory, displacement, CF);
         } break;
 
         case (Op_jnb): {
+            conditional_jump(main_memory, displacement, !CF);
         } break;
 
         case (Op_je): {
+            conditional_jump(main_memory, displacement, ZF);
         } break;
 
         case (Op_jne): {
+            conditional_jump(main_memory, displacement, !ZF);
         } break;
 
         case (Op_jbe): {
+            conditional_jump(main_memory, displacement, CF || ZF);
         } break;
 
         case (Op_ja): {
+            conditional_jump(main_memory, displacement, !CF && !ZF);
         } break;
 
         case (Op_js): {
+            conditional_jump(main_memory, displacement, SF);
         } break;
 
         case (Op_jns): {
+            conditional_jump(main_memory, displacement, !SF);
         } break;
 
         case (Op_jp): {
+            conditional_jump(main_memory, displacement, PF);
         } break;
 
         case (Op_jnp): {
+            conditional_jump(main_memory, displacement, !PF);
         } break;
 
         case (Op_jl): {
+            conditional_jump(main_memory, displacement, SF != OF);
         } break;
 
         case (Op_jnl): {
+            conditional_jump(main_memory, displacement, SF == OF);
         } break;
 
         case (Op_jle): {
+            conditional_jump(main_memory, displacement, ZF || (SF != OF));
         } break;
 
         case (Op_jg): {
+            conditional_jump(main_memory, displacement, !ZF && (SF == OF));
         } break;
 
         case (Op_loop): {
+            if (--registers_state.cx != 0) {
+                jump(displacement);
+            }
         } break;
 
         case (Op_loopz): {
+            if (--registers_state.cx != 0 && ZF) {
+                jump(displacement);
+            }
         } break;
 
         case (Op_loopnz): {
+            if (--registers_state.cx != 0 && !ZF) {
+                jump(displacement);
+            }
         } break;
 
         case (Op_jcxz): {
+            if (registers_state.cx == 0) {
+                jump(displacement);
+            }
         } break;
 
         case (Op_Unimplemented): {
@@ -230,12 +243,17 @@ static void cmp(Seg_Mem *main_memory, Instruction instruction) {
     uint16_t dest_value = get_operand_value(main_memory, instruction.dest);
     uint16_t source_value = get_operand_value(main_memory, instruction.source);
     uint16_t result = dest_value + source_value;
-    Instruction_Operand result_operand = immediate_operand(result);
+    Instruction_Operand result_operand = immediate_operand(result, false);
     check_common_flags(main_memory, result_operand);
 }
 
 static void conditional_jump(Seg_Mem *main_memory, int8_t displacement, bool should_jump) {
+    uint16_t new_ip = registers_state.ip + displacement;
+    registers_state.ip = should_jump ? new_ip : registers_state.ip;
+}
 
+static void jump(int8_t displacement) {
+    registers_state.ip += displacement;
 }
 
 static void set_operand_value(Seg_Mem *main_memory, Instruction_Operand operand, uint16_t val) {

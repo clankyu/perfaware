@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "decoder.h"
 #include "instruction.h"
+#include "text.h"
 
 Opcode_Pattern opcode_patterns[31] = {
     { MOV_MASK, MOV_OPCODE, decode_mov },
@@ -45,6 +46,14 @@ static uint32_t cond_jump_table[16] = {
 
 Operation_Type get_cond_jump_type(uint8_t opcode) {
     return cond_jump_table[COND_JUMP_INDEX(opcode)];
+}
+
+bool opcode_is_jump_type(uint8_t opcode) {
+    if ((opcode >= 0b01110000 && opcode <= 0b01111111) || (opcode >= 0b11100000 && opcode <= 0b11100011)) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 Instruction decode_instruction(uint8_t *buffer, uint16_t index) {
@@ -199,11 +208,11 @@ Instruction decode_immediate_mov(FN_PARAMS) {
 
     if (params.w) {
         uint16_t s = (int16_t)buffer[index+1] | ((int16_t)buffer[index+2] << 8);
-        instr.source = immediate_operand(s);
+        instr.source = immediate_operand(s, false);
         instr.size = 3;
     } else {
         uint16_t s = buffer[index+1];
-        instr.source = immediate_operand(s);
+        instr.source = immediate_operand(s, false);
         instr.size = 2;
     }
 
@@ -287,7 +296,7 @@ Instruction decode_immediate_arithmetic(FN_PARAMS) {
         instr.size++;
     }
 
-    instr.source = immediate_operand(data);
+    instr.source = immediate_operand(data, false);
 
     return instr;
 }
@@ -383,7 +392,7 @@ Instruction decode_immediate_acumm(FN_PARAMS) {
         instr.size = 2;
     }
 
-    instr.source = immediate_operand(data);
+    instr.source = immediate_operand(data, false);
 
     return instr;
 }
@@ -393,7 +402,7 @@ Instruction decode_cond_jump(FN_PARAMS) {
     uint8_t byte = buffer[index];
     int8_t offset = (int8_t) buffer[index + 1];
     instr.op_type = get_cond_jump_type(byte);
-    instr.dest = immediate_operand(offset);
+    instr.dest = immediate_operand(offset, true);
     instr.source = none_operand();
     instr.size = 2;
 
@@ -416,7 +425,7 @@ Instruction decode_control_transfer(FN_PARAMS) {
         instr.op_type = Op_jcxz;
     }
 
-    instr.dest = immediate_operand(offset);
+    instr.dest = immediate_operand(offset, true);
     instr.size = 2;
 
     return instr;

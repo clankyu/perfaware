@@ -31,6 +31,7 @@ typedef struct {
 
 typedef struct {
     uint16_t val;
+    bool is_signed;
 } Immediate;
 
 typedef enum {
@@ -88,7 +89,7 @@ typedef struct {
 Instruction_Operand general_register_operand(Instruction_Params params, bool uses_rm);
 Instruction_Operand segment_register_operand(uint8_t sr);
 Instruction_Operand effective_address_operand(Instruction_Params params, uint16_t displacement);
-Instruction_Operand immediate_operand(uint16_t value);
+Instruction_Operand immediate_operand(uint16_t value, bool is_signed);
 Instruction_Operand none_operand();
 
 static Operand_State save_operand_state(Instruction_Operand operand, int16_t before, int16_t after);

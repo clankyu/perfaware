@@ -85,4 +85,6 @@ Instruction decode_immediate_acumm(FN_PARAMS);
 Instruction decode_cond_jump(FN_PARAMS);
 Instruction decode_control_transfer(FN_PARAMS);
 
+bool opcode_is_jump_type(uint8_t opcode);
 Operation_Type get_cond_jump_type(uint8_t opcode);
+

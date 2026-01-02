@@ -14,8 +14,11 @@
 #include "text.h"
 
 void sim8086(Seg_Mem *main_memory, Seg_Mem *byte_data);
-Seg_Mem dissasemble_8086(Seg_Mem *main_memory, Seg_Mem *byte_data);
+uint32_t dissasemble_8086(Seg_Mem *main_memory, Seg_Mem *instruction_stream, Instruction *dest);
+void generate_asm_file(Instruction *instructions, uint16_t instruction_count, bool print);
+
 void run_8086(Seg_Mem *main_memory, Seg_Mem *instructions_mem);
+
 void init_main_memory(Seg_Mem *main_memory, uint8_t *program_mem);
 bool data_is_the_same(Seg_Mem *data1, Seg_Mem *data_2);
 int compile_result_asm();
@@ -26,12 +29,22 @@ void compile_result_asm_unsafe();
 #define ASM_FILE_NAME "result.asm"
 #define ASM_COMPILE_RESULT_NAME "result.bin"
 #define RESULT_BINARY_MAX_SIZE 1000000
+#define RESULT_ASM_MEM_MAX_SIZE 1000000
+#define MAX_DECODED_INSTRUCTIONS 1000
+#define MAX_JUMP_LOCATIONS 8
+
+uint32_t decoded_instruction_count = 0;
 
 uint32_t sim_flags = 0;
+
+int16_t jump_locations[MAX_JUMP_LOCATIONS] = {0};
+uint16_t jump_location_count = 0;
 
 int main(int argc, char **argv) {
     uint8_t program_mem[PROGRAM_MEM_SIZE];
     uint8_t result_binary_mem[RESULT_BINARY_MAX_SIZE];
+    uint8_t result_asm_mem[RESULT_ASM_MEM_MAX_SIZE];
+    Instruction decoded_instructions[MAX_DECODED_INSTRUCTIONS];
 
     if (argc < 2) {
         printf("No arguments given, exiting program.\n");
@@ -79,30 +92,15 @@ int main(int argc, char **argv) {
         printf("\nFinal registers:\n");
         print_registers_state();
         print_flags_state();
+
+        printf("\nPrinting decoded instructions:\n");
+        uint16_t instruction_count = dissasemble_8086(&main_memory, &instruction_stream, decoded_instructions);
+        generate_asm_file(decoded_instructions, instruction_count, true);
     } else {
-        Seg_Mem instructions_mem = dissasemble_8086(&main_memory, &instruction_stream);
+        printf("\nPrinting decoded instructions:\n");
+        uint16_t instruction_count = dissasemble_8086(&main_memory, &instruction_stream, decoded_instructions);
+        generate_asm_file(decoded_instructions, instruction_count, true);
         print_bits(buffer, file_size);
-
-        FILE *file_result = fopen("results/result.asm", "w");
-        fprintf(file_result, "bits 16\n");
-
-        printf("bits 16\n");
-        Instruction *instructions = (void*) access_memory(&instructions_mem, 0);
-        printf("DECODING RESULTS:\n");
-        for (int i = 0; i < instructions_mem.size / sizeof(Instruction); i++) {
-            Instruction instruction = instructions[i];
-            Instruction_String_Expression expr = get_instruction_str(&instruction);
-            instruction_print(&expr, instruction);
-
-            if (instruction.source.type == Operand_None) {
-                fprintf(file_result, "%s %s\n", expr.mnemonic, expr.dest);
-            } else {
-                fprintf(file_result, "%s %s, %s\n", expr.mnemonic, expr.dest, expr.source);
-            }
-        }
-        printf("\n");
-
-        fclose(file_result);
     }
 
     printf("\n");
@@ -118,6 +116,13 @@ int main(int argc, char **argv) {
         } else {
             printf("Failed to dissasemble binary with accuracy.\n");
             printf("Compiled assembly result.bin is not the same as %s\nSuccessfully dissasembled binary.\n", file_name);
+
+            printf("\nOriginal binary bits:\n");
+            print_bits(instruction_stream.memory, instruction_stream.size);
+
+            printf("\nResult binary bits:\n");
+            print_bits(file_result.memory, file_result.size);
+            printf("\n");
         }
     }
 
@@ -127,9 +132,6 @@ int main(int argc, char **argv) {
 }
 
 void sim8086(Seg_Mem *main_memory, Seg_Mem *byte_data) {
-    FILE *file_result = fopen("results/result.asm", "w");
-    fprintf(file_result, "bits 16\n");
-
     bool pattern_matched = false;
 
     while (registers_state.ip < byte_data->size) {
@@ -150,12 +152,6 @@ void sim8086(Seg_Mem *main_memory, Seg_Mem *byte_data) {
                 Instruction_String_Expression expression = get_instruction_str(&instruction);
                 print_instruction_and_operand_state(&instruction, &expression, instruction_state, flags_state);
 
-                if (instruction.source.type == Operand_None) {
-                    fprintf(file_result, "%s %s\n", expression.mnemonic, expression.dest);
-                } else {
-                    fprintf(file_result, "%s %s, %s\n", expression.mnemonic, expression.dest, expression.source);
-                }
-
                 registers_state.ip += instruction.size;
 
                 break;
@@ -168,30 +164,46 @@ void sim8086(Seg_Mem *main_memory, Seg_Mem *byte_data) {
             registers_state.ip++;
         }
     }
-
-    fclose(file_result);
 }
 
-// basically this function allocates directly into main memory the Instruction struct's data,
-// and then at the end we manually create a Seg_Mem that is all of the instructions, very ugly
-Seg_Mem dissasemble_8086(Seg_Mem *main_memory, Seg_Mem *byte_data) {
+uint32_t dissasemble_8086(Seg_Mem *main_memory, Seg_Mem *instruction_stream, Instruction *dest) {
     bool pattern_matched = false;
-    uint32_t memory_base = byte_data->base + byte_data->size;
     uint32_t instruction_count = 0;
 
-    for (int i = 0; i < byte_data->size;) {
-        uint8_t byte = byte_data->memory[byte_data->base + i];
+    for (int i = 0; i < instruction_stream->size;) {
+        uint8_t byte = instruction_stream->memory[instruction_stream->base + i];
         pattern_matched = false;
 
         for (int j = 0; j < sizeof(opcode_patterns) / sizeof(Opcode_Pattern); j++) {
             if ((byte & opcode_patterns[j].mask) == opcode_patterns[j].opcode) {
                 pattern_matched = true;
 
-                Instruction instruction = opcode_patterns[j].decode_fn(byte_data->memory + byte_data->base, i);
-                memcpy(main_memory->memory + memory_base, &instruction, sizeof(Instruction));
-                memory_base += sizeof(Instruction);
+                Instruction instruction = opcode_patterns[j].decode_fn(instruction_stream->memory + instruction_stream->base, i + registers_state.cs);
+                instruction.address = i + registers_state.cs;
+
                 i += instruction.size;
+
+                assert(instruction_count < MAX_DECODED_INSTRUCTIONS);
+                dest[instruction_count] = instruction;
                 instruction_count++;
+
+                if (opcode_is_jump_type(byte)) {
+                    uint16_t target = i + (int8_t)(instruction.dest.immediate.val & 0xFF);
+                    bool already_exists = false;
+
+                    for (int k = 0; k < MAX_JUMP_LOCATIONS; k++) {
+                        if (jump_locations[k] == target) {
+                            assert((target) != 0); // this is bad but i want to finish
+                            already_exists = true;
+                        }
+                    }
+
+                    if (!already_exists) {
+                        assert(jump_location_count < 8);
+                        jump_locations[jump_location_count] = target;
+                        jump_location_count++;
+                    }
+                }
 
                 break;
             }
@@ -204,20 +216,44 @@ Seg_Mem dissasemble_8086(Seg_Mem *main_memory, Seg_Mem *byte_data) {
         }
     }
 
-    Seg_Mem instructions_mem;
-    instructions_mem.memory = main_memory->memory;
-    instructions_mem.base = byte_data->size;
-    instructions_mem.size = sizeof(Instruction) * instruction_count;
-    instructions_mem.mask = 0xFFFF;
+    for (int i = 0; i < jump_location_count; i++) {
+        printf("jump locaiton thing %i: %i\n", i, jump_locations[i]);
+    }
 
-    return instructions_mem;
+    return instruction_count;
 }
 
-void run_8086(Seg_Mem *main_memory, Seg_Mem *instructions_mem) {
-    int32_t instruction_count = instructions_mem->size / sizeof(Instruction);
-    printf("executing all instructions, instruction count %i\n", instruction_count);
+void generate_asm_file(Instruction *instructions, uint16_t instruction_count, bool print) {
+    FILE *result_asm_file = fopen("results/result.asm", "w");
+    fprintf(result_asm_file, "bits 16\n");
+    fprintf(result_asm_file, "cpu 8086\n");
 
-    execute_instructions(main_memory, instructions_mem);
+    for (int i = 0; i < instruction_count; i++) {
+        Instruction instruction = instructions[i];
+        Instruction_String_Expression expression = get_instruction_str(&instruction);
+
+        uint16_t jump_location = 0;
+        for (int j = 0; j < jump_location_count; j++) {
+            if (jump_locations[j] == instruction.address) {
+                if (print) {printf(".L%u:\n", instruction.address);}
+                fprintf(result_asm_file, ".L%u:\n", instruction.address);
+            }
+        }
+
+        if (instruction.op_type >= Op_je && instruction.op_type <= Op_jcxz) {
+            fprintf(result_asm_file, "%s .L%u\n", expression.mnemonic, instruction.address + instruction.size + (int8_t)(instruction.dest.immediate.val & 0xFF));
+        } else if (instruction.source.type == Operand_None) {
+            fprintf(result_asm_file, "%s %s\n", expression.mnemonic, expression.dest);
+        } else {
+            fprintf(result_asm_file, "%s %s, %s\n", expression.mnemonic, expression.dest, expression.source);
+        }
+
+        if (print) {
+            instruction_print(instruction, &expression);
+        }
+    }
+
+    fclose(result_asm_file);
 }
 
 bool data_is_the_same(Seg_Mem *data1, Seg_Mem *data2) {
@@ -228,6 +264,7 @@ bool data_is_the_same(Seg_Mem *data1, Seg_Mem *data2) {
     }
 
     for (int i = 0; i < data1->size; i++) {
+        uint8_t byte = data2->memory[i];
         if (data1->memory[i] != data2->memory[i]) {
             same = false;
             break;
@@ -257,12 +294,12 @@ int run_cmd(char *cmd[]) {
 }
 
 int compile_result_asm() {
-    char *nasm[] = {"nasm", "-f", "bin", "results/result.asm", "-o", "results/result.bin", 0x0};
+    char *nasm[] = {"nasm", "-f", "bin", "-O0", "-w+all", "-DCPU=8086", "results/result.asm", "-o", "results/result.bin", 0x0};
     return run_cmd(nasm);
 }
 
 void compile_result_asm_unsafe() {
-    system("nasm -f bin results/result.asm -o results/result.bin");
+    system("nasm -f bin -O0 -w+all -DCPU=8086 results/result.asm -o results/result.bin");
 }
 
 void init_main_memory(Seg_Mem *main_memory, uint8_t *program_mem) {

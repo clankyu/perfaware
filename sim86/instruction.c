@@ -35,10 +35,11 @@ Instruction_Operand effective_address_operand(Instruction_Params params, uint16_
     return result;
 }
 
-Instruction_Operand immediate_operand(uint16_t value) {
+Instruction_Operand immediate_operand(uint16_t value, bool is_signed) {
     Instruction_Operand result = {};
     result.type = Operand_Immediate;
     result.immediate.val = value;
+    result.immediate.is_signed = is_signed;
 
     return result;
 }

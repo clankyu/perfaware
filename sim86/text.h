@@ -6,7 +6,6 @@ static char *op_type_table[Op_Count];
 static char *reg_field_table[2][8];
 static char *effective_address_table[3][8];
 static char *cond_jump_table_str[16];
-static char *label_table[8];
 static char *segment_register_table[4];
 
 typedef struct {
@@ -16,7 +15,7 @@ typedef struct {
 } Instruction_String_Expression;
 
 Instruction_String_Expression get_instruction_str(Instruction *instruction);
-void instruction_print(Instruction_String_Expression *expression, Instruction instruction);
+void instruction_print(Instruction instruction, Instruction_String_Expression *expression);
 void get_flags_str(char *dest, uint16_t flags);
 
 void format_displacement(char *source, int16_t displacement);

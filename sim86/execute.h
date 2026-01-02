@@ -62,6 +62,7 @@ static void add(Seg_Mem *main_memory, Instruction instruction);
 static void sub(Seg_Mem *main_memory, Instruction instruction);
 static void cmp(Seg_Mem *main_memory, Instruction instruction);
 static void conditional_jump(Seg_Mem *main_memory, int8_t displacement, bool should_jump);
+static void jump(int8_t displacement);
 
 static uint16_t get_operand_value(Seg_Mem *main_memory, Instruction_Operand operand);
 static void set_operand_value(Seg_Mem *main_memory, Instruction_Operand operand, uint16_t val);

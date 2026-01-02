@@ -1,6 +1,17 @@
 bits 16
-mov cx, 200
-mov bx, cx
-add cx, 1000
-mov bx, 2000
-sub cx, bx
+cpu 8086
+mov ax, 10
+mov bx, 10
+mov cx, 10
+.L9:
+cmp bx, cx
+je .L18
+add ax, 1
+jp .L23
+.L18:
+sub bx, 5
+jb .L26
+.L23:
+sub cx, 2
+.L26:
+loopnz .L9

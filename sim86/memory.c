@@ -26,6 +26,20 @@ void load_memory_from_file(char *file_name, Seg_Mem *memory) {
     fclose(file);
 }
 
+void write_memory_to_file(char *file_name, void *data, uint32_t n) {
+    int32_t file_size = n;
+
+    FILE *file = fopen(file_name, "wb");
+    if (!file) {
+        printf("Failed to open file\n");
+        return;
+    }
+
+    fwrite(data, 1, n, file);
+
+    fclose(file);
+}
+
 uint8_t *access_memory(Seg_Mem *seg_mem, uint32_t offset) {
     if (offset > seg_mem->size - 1) {
         printf("[ERROR]: accessing memory out of bounds in offset %i\n", offset);
