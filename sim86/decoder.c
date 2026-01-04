@@ -3,11 +3,11 @@
 #include <stdio.h>
 #include "decoder.h"
 #include "instruction.h"
-#include "text.h"
 
-Opcode_Pattern opcode_patterns[31] = {
+Opcode_Pattern opcode_patterns[32] = {
     { MOV_MASK, MOV_OPCODE, decode_mov },
     { IMMD_OP_MASK, IMMD_OP_OPCODE, decode_immediate_mov },
+    { MOV_IMMD_TO_REGMEM_MASK, MOV_IMMD_TO_REGMEM_OPCODE, decode_mov_immd_to_regmem  },
     { IMMD_OP_ARITHMETIC_MASK, IMMD_OP_ARITHMETIC_OPCODE, decode_immediate_arithmetic },
     { ADD_MASK, ADD_OPCODE, decode_arithmetic },
     { SUB_MASK, SUB_OPCODE, decode_arithmetic },
@@ -215,6 +215,68 @@ Instruction decode_immediate_mov(FN_PARAMS) {
         instr.source = immediate_operand(s, false);
         instr.size = 2;
     }
+
+    return instr;
+}
+
+Instruction decode_mov_immd_to_regmem(FN_PARAMS) {
+    Instruction instr;
+    Instruction_Params params;
+
+    uint8_t byte = buffer[index];
+    params.w = byte & 0b1;
+    params.mod = (buffer[index+1] >> 6) & 0b11;
+    params.rm = buffer[index+1] & 0b111;
+    instr.size = 2;
+    // we have to set reg to rm because in this specific isntruction we use rm for indexing, this is messy, probably should change the way Reg_Access works
+    // but whatever
+    params.reg = params.rm;
+
+    int16_t displacement = (int16_t)buffer[index+2] | ((int16_t)buffer[index+3] << 8);
+    int16_t data = 0;
+
+    instr.op_type = Op_mov;
+
+    int16_t data_idx = index + 2;
+    switch (params.mod) {
+        case 0b00:
+            if (params.rm == 0b110) {
+                instr.dest = effective_address_operand(params, displacement);
+                data_idx = index + 4;
+                instr.size += 2;
+            } else {
+                instr.dest = effective_address_operand(params, 0);
+                data_idx = index + 2;
+            }
+            break;
+        case 0b01:
+            displacement = (int16_t)buffer[index+2];
+            instr.dest = effective_address_operand(params, displacement);
+            instr.size++;
+            data_idx = index + 3;
+            break;
+        case 0b10:
+            instr.dest = effective_address_operand(params, displacement);
+            instr.size += 2;
+            data_idx = index + 4;
+            break;
+        case 0b11:
+            instr.dest = general_register_operand(params, false);
+            data_idx = index + 2;
+            break;
+        default:
+            printf("[ERROR]: decode_immediate_arithmetic, mod is not 0b00, 0b01, 0b10 or 0b11, mod: %i\n", params.mod);
+    }
+
+    if (params.w) {
+        data = (int16_t) ((int16_t)buffer[data_idx] | (int16_t)buffer[data_idx+1] << 8);
+        instr.size += 2;
+    } else {
+        data = buffer[data_idx];
+        instr.size++;
+    }
+
+    instr.source = immediate_operand(data, false);
 
     return instr;
 }

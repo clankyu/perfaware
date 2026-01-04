@@ -137,7 +137,8 @@ void get_immediate_str(char *dest, Instruction_Operand operand) {
 }
 
 void get_none_str(char *dest) {
-    strcpy(dest, "\0");
+    dest[0] = '\0';
+    //strcpy(dest, "\0");
 }
 
 void print_instruction_and_operand_state(Instruction *instruction, Instruction_String_Expression *expression, Operand_State operand_state, Flags_State flags_state) {

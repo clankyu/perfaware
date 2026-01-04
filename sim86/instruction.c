@@ -31,6 +31,7 @@ Instruction_Operand effective_address_operand(Instruction_Params params, uint16_
     result.address.displacement = displacement;
     result.address.mod = params.mod;
     result.address.rm = params.rm;
+    result.address.is_word = params.w;
 
     return result;
 }

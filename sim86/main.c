@@ -159,8 +159,9 @@ void sim8086(Seg_Mem *main_memory, Seg_Mem *byte_data) {
         }
 
         if (!pattern_matched) {
-            printf("Instruction not found. instruction byte");
+            printf("Instruction not found. instruction byte: ");
             print_bits(&opcode_byte, 1);
+            printf("\n");
             registers_state.ip++;
         }
     }
@@ -210,14 +211,11 @@ uint32_t dissasemble_8086(Seg_Mem *main_memory, Seg_Mem *instruction_stream, Ins
         }
 
         if (!pattern_matched) {
-            printf("Instruction not found. instruction byte");
+            printf("Instruction not found. instruction byte: ");
             print_bits(&byte, 1);
+            printf("\n");
             i++;
         }
-    }
-
-    for (int i = 0; i < jump_location_count; i++) {
-        printf("jump locaiton thing %i: %i\n", i, jump_locations[i]);
     }
 
     return instruction_count;
