@@ -1,0 +1,7 @@
+#include "util.h"
+
+typedef struct {
+    u8 *data;
+    u32 count;
+} Buffer;
+
