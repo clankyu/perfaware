@@ -9,6 +9,6 @@ typedef struct {
 
 b32 in_bounds(Buffer buffer, u32 index);
 b32 buffers_are_equal(Buffer a, Buffer b);
-Buffer allocate_buffer(u32 count);
+Buffer allocate_buffer(u32 size);
 void free_buffer(Buffer *buffer);
 Buffer buffer_from_file(const char *file_name);

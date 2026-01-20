@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#define CLUSTER_FLAG 1
+
 #define array_count(array) (sizeof(array) / sizeof((array)[0]))
 
 typedef int8_t s8;

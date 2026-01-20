@@ -1,3 +1,5 @@
+#pragma once
+
 #include "util.h"
 
 static f64 Square(f64 A);

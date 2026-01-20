@@ -21,15 +21,15 @@ b32 buffers_are_equal(Buffer a, Buffer b) {
     return true;
 }
 
-Buffer allocate_buffer(u32 count) {
+Buffer allocate_buffer(u32 size) {
     Buffer result = {0};
 
-    result.data = (u8*) malloc(count);
+    result.data = (u8*) malloc(size);
     if (result.data) {
-        result.count = count;
+        result.count = size;
     } else {
         result.count = 0;
-        fprintf(stderr, "Error allocating data, count: %u\n", count);
+        fprintf(stderr, "Error allocating data, count: %u\n", size);
     }
 
     return result;
