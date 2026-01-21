@@ -82,6 +82,8 @@ int main(int argc, char **argv) {
                 char *json_sep = (i == (pair_count - 1)) ? "\n" : ",\n";
                 fprintf(json_file, "    {\"x0\":%.16f, \"y0\":%.16f, \"x1\":%.16f, \"y1\":%.16f}%s", pair.x0, pair.y0, pair.x1, pair.y1, json_sep);
             }
+
+            fprintf(json_file, "]}\n");
         } else {
             program_failed = true;
         }
