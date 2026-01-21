@@ -19,7 +19,8 @@ typedef struct
     u64 A, B, C, D;
 } random_series;
 
-Haversine_Pair generate_haversine_pair(u64 seed, f64 x_origin, f64 y_origin, u32 program_flags);
+Haversine_Pair generate_haversine_pair(random_series *series, u64 seed, f64 x_origin, f64 y_origin);
+f64 haversine_distance(Haversine_Pair *pair);
 
 u64 RotateLeft(u64 V, int Shift);
 u64 RandomU64(random_series *Series);

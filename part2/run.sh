@@ -1,12 +1,12 @@
 #!/bin/bash
 
-gcc src/main.c -I src -o profiler -lm
+gcc src/main.c src/haversine_formula.c src/haversine_generator.c -I src -o profiler -lm
 
 # Check if compilation was successful
 if [ $? -eq 0 ]; then
     echo "[DEBUG]: Compilation successful, running program."
     # Execute the program
-    ./dissasembler "$@"
+    ./profiler "$@"
 else
     echo "[DEBUG]: Compilation failed."
 fi
