@@ -24,5 +24,6 @@ typedef u16 b16;
 typedef u32 b32;
 typedef u64 b64;
 
+#define bool u32
 #define true 1
 #define false 0
