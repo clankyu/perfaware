@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
             program_failed = true;
         }
 
-        u64 seed = atoll(argv[3]);
+        seed = atoll(argv[3]);
     }
 
     random_series series = Seed(seed);
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
     }
 
     if (!program_failed) {
-        printf("Successfully generated json containing haversine pairs and binary containig binary distances\n");
+        printf("Successfully generated json haversine pairs and binary distances\n");
         printf("Random seed: %lu\n", seed);
         printf("Method: %s\n", method_name);
         printf("Pair count: %lu\n", pair_count);

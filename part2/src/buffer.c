@@ -4,8 +4,8 @@
 
 #include "buffer.h"
 
-b32 in_bounds(Buffer buffer, u32 index) {
-    if (buffer.count < index) {
+b32 in_bounds(Buffer buffer, u32 at) {
+    if (buffer.count < at) {
         return false;
     }
 
