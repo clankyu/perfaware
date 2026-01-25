@@ -1,6 +1,6 @@
 #!/bin/bash
 
-gcc src/main.c src/haversine_formula.c src/haversine_generator.c -I src -o profiler -lm
+gcc src/haversine_generator_main.c src/haversine_formula.c src/haversine_generator.c -I src -o profiler -lm
 
 # Check if compilation was successful
 if [ $? -eq 0 ]; then

@@ -8,9 +8,9 @@ Haversine_Pair generate_haversine_pair(random_series *series, u64 seed, f64 x_or
     Haversine_Pair result = {0};
 
     f64 x0 = RandomDegree(series, x_origin, CLUSTER_RADIUS, X_MAX);
-    f64 y0 = RandomDegree(series, y_origin, CLUSTER_RADIUS, X_MAX);
+    f64 y0 = RandomDegree(series, y_origin, CLUSTER_RADIUS, Y_MAX);
     f64 x1 = RandomDegree(series, x_origin, CLUSTER_RADIUS, X_MAX);
-    f64 y1 = RandomDegree(series, y_origin, CLUSTER_RADIUS, X_MAX);
+    f64 y1 = RandomDegree(series, y_origin, CLUSTER_RADIUS, Y_MAX);
 
     result.x0 = x0;
     result.y0 = y0;
