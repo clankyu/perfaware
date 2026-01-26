@@ -28,3 +28,7 @@ Json_Value get_value_from_key(Buffer *source, u32 at, char const *key) {
 Json_Token_Type check_token_type(Buffer *source, u32 at) {
     return Token_error;
 }
+
+b32 is_json_whitespace(Buffer source, u64 at) {
+
+}

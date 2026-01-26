@@ -3,6 +3,7 @@
 #include "util.h"
 #include "buffer.h"
 #include "haversine_generator.h"
+#include "json_parser.h"
 
 int main(int argc, char** argv) {
     printf("Starting haversine processor.\n");
@@ -23,7 +24,7 @@ int main(int argc, char** argv) {
 
     if (parsed_values.count && json_input.count) {
         Haversine_Pair *pairs = (Haversine_Pair*)parsed_values.data;
-        u64 pair_count = parse_haversine_pairs(json_input, pairs);
+        u64 pair_count = parse_haversine_pairs(&json_input, pairs);
     } else {
         fprintf(stderr, "Failed to create buffer for json input and/or parsed values.\nparsed_values.count = %u\njson_input.count = %u\n", parsed_values.count, json_input.count);
     }
