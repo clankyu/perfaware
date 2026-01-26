@@ -1,18 +1,16 @@
 #include "json_parser.h"
+#include "haversine_generator.h"
 
 #include "util.h"
 
-Buffer parse_haversine_pairs_from_json(Buffer *source) {
-    Buffer result = allocate_buffer(HAVERSINE_PAIR_BUFFER_SIZE);
+u64 parse_haversine_pairs(Buffer *source, Haversine_Pair *pairs) {
+    u64 result = 0;
 
     for (u32 at = 0; at < source->count; at++) {
         switch (source->data[at]) {
             case '{': {
                 Json_Value value = {0};
                 value.type = Value_object;
-                for (;;) {
-
-                }
             }
         }
     }

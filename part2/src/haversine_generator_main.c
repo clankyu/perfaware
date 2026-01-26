@@ -5,9 +5,6 @@
 #include "util.h"
 #include "haversine_generator.h"
 
-#define MIN_PAIRS 1000
-#define MAX_PAIRS 1000000
-
 u32 program_flags = 0;
 b32 program_failed = 0;
 

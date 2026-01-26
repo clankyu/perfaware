@@ -9,6 +9,9 @@
 #define Y_MAX ((f64)90.0f)
 #define Y_MIN ((f64)-90.0f)
 
+#define MIN_PAIRS 1000
+#define MAX_PAIRS 10000000
+
 typedef struct {
     f64 x0, y0;
     f64 x1, y1;
