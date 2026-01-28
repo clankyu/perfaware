@@ -19,6 +19,8 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+    test_parsing();
+
     Buffer json_input = buffer_from_file(json_input_name);
     Buffer parsed_values = allocate_buffer(MAX_PAIRS * sizeof(Haversine_Pair));
 
@@ -31,3 +33,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+

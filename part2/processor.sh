@@ -1,6 +1,6 @@
 #!/bin/bash
 
-gcc src/haversine_main.c src/json_parse.c -I src -o processor -lm
+gcc src/haversine_main.c src/json_parser.c src/buffer.c -I src -o processor -lm
 
 # Check if compilation was successful
 if [ $? -eq 0 ]; then
