@@ -21,15 +21,11 @@ u64 parse_haversine_pairs(Buffer input_json, Haversine_Pair *pairs) {
             pair->y0 = convert_element_to_f64(element, CONSTANT_STRING("y0"));
             pair->x1 = convert_element_to_f64(element, CONSTANT_STRING("x1"));
             pair->y1 = convert_element_to_f64(element, CONSTANT_STRING("y1"));
-            /*
             printf("x0: %lf\n", pair->x0);
             printf("y0: %lf\n", pair->y0);
             printf("x1: %lf\n", pair->x1);
             printf("y1: %lf\n", pair->y1);
-            */
         }
-    } else {
-        fprintf(stderr, "Failed to lookup pairs array.\n");
     }
 
     free_json(parsed_json);
@@ -93,8 +89,8 @@ Json_Token get_json_token(Parser *parser) {
             case '"': {
                 result.type = Token_string_literal;
 
-                at++;
                 u64 string_start = at;
+                at++;
                 while (is_in_bounds(source, at) && source.data[at] != '"') {
                     if (is_in_bounds(source, at + 1) && source.data[at] == '\\' && source.data[at + 1] == '"') {
                         at++;
@@ -258,8 +254,6 @@ Json_Element *lookup_json_element(Json_Element *object, Buffer element_name) {
                 break;
             }
         }
-    } else {
-        fprintf(stderr, "Failed to look up json element. JSON object is null.\n");
     }
 
     return result;
@@ -318,15 +312,14 @@ f64 convert_element_to_f64(Json_Element *object, Buffer element_name) {
         u64 at = 0;
         f64 sign = convert_json_sign(element->value, &at);
         f64 number = convert_json_number(element->value, &at);
+        f64 decimal = 0.0f;
 
         if (is_in_bounds(element->value, at) && element->value.data[at] == '.') {
             at++;
-            f64 c = 1.0f / 10.0f;
-            while (is_in_bounds(element->value, at)) {
-                u8 decimal = element->value.data[at] - (u8)'0';
-                if (decimal < 10) {
-                    number = number + c*(f64)decimal;
-                    c *= 1.0 / 1.0f;
+            for (u32 exponent = 1; is_in_bounds(element->value, at); at++) {
+                u8 d = element->value.data[at] - (u8)'0';
+                if (d < 10) {
+                    decimal += d*pow(10, -exponent);
                     at++;
                 } else {
                     break;
@@ -334,6 +327,7 @@ f64 convert_element_to_f64(Json_Element *object, Buffer element_name) {
             }
         }
 
+        number += decimal;
         if(is_in_bounds(element->value, at) && (element->value.data[at] == 'e') ||(element->value.data[at] == 'E')) {
             at++;
             if (is_in_bounds(element->value, at) && (element->value.data[at] == '+')) {
@@ -354,7 +348,6 @@ f64 convert_element_to_f64(Json_Element *object, Buffer element_name) {
 
 void error(Parser *parser, Json_Token token, char const *message) {
     parser->had_error = true;
-    /*
     fprintf(stderr, "Parsing error. Message: %s\n", message);
 
     char error_char = parser->source.data[parser->at];
@@ -365,8 +358,7 @@ void error(Parser *parser, Json_Token token, char const *message) {
     printf("Error char: %c\n", error_char);
     printf("After error char: %c\n", error_char_after);
     fprintf(stderr, "Debug info:\ntoken type: %i\nparser->source.data[%lu]: %c\nparser->source.count: %u\n", token.type, parser->at, parser->source.data[parser->at], parser->source.count);
-    */
-    fprintf(stderr, "Parsing error: %s\n - Count: %u, Data: %s", message, (u32) token.value.count, (char*) token.value.data);
+    //fprintf(stderr, "Parsing error: %s\n - Count: %u, Data: %s", message, (u32) token.value.count, (char*) token.value.data);
 }
 
 b32 is_json_digit(Buffer source, u64 at) {
