@@ -57,7 +57,7 @@ struct Json_Element {
 
 #define CONSTANT_STRING(string) (Buffer) { .data = (void*)string, .count = sizeof(string) - 1 }
 
-u64 parse_haversine_pairs(Buffer *source, Haversine_Pair *pairs);
+u64 parse_haversine_pairs(Buffer input_json, Haversine_Pair *pairs);
 
 Json_Element *parse_json(Buffer input_json);
 void free_json(Json_Element *element);
@@ -67,6 +67,10 @@ Json_Token get_json_token(Parser *parser);
 Json_Element *parse_json_list(Parser *parser, Json_Token starting_token, Json_Token_Type end_type, b32 has_key);
 Json_Element *parse_json_element(Parser *parser, Buffer key, Json_Token value);
 Json_Element *lookup_json_element(Json_Element *object, Buffer element_name);
+
+f64 convert_json_sign(Buffer source, u64 *at_result);
+f64 convert_json_number(Buffer source, u64 *at_result);
+f64 convert_element_to_f64(Json_Element *element, Buffer element_name);
 
 void parse_keyword(Buffer source, u64 *at, Json_Token_Type type, Buffer keyword, Json_Token *result);
 Json_Token_Type check_token_type(Buffer *source, u32 at);

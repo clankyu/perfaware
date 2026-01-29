@@ -26,7 +26,18 @@ int main(int argc, char** argv) {
 
     if (parsed_values.count && json_input.count) {
         Haversine_Pair *pairs = (Haversine_Pair*)parsed_values.data;
-        u64 pair_count = parse_haversine_pairs(&json_input, pairs);
+        u64 pair_count = parse_haversine_pairs(json_input, pairs);
+        /*
+        f64 sum = 0;
+        for (u32 i = 0; i < pair_count; i++) {
+            printf("donig things\n");
+            Haversine_Pair pair = pairs[i];
+            sum += haversine_distance(&pair);
+        }
+
+        f64 average = sum / (f64)pair_count;
+        printf("Haversine distance average: %lf\n", average);
+        */
     } else {
         fprintf(stderr, "Failed to create buffer for json input and/or parsed values.\nparsed_values.count = %u\njson_input.count = %u\n", parsed_values.count, json_input.count);
     }
