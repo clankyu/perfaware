@@ -21,12 +21,6 @@ u64 parse_haversine_pairs(Buffer input_json, Haversine_Pair *pairs) {
             pair->y0 = convert_element_to_f64(element, CONSTANT_STRING("y0"));
             pair->x1 = convert_element_to_f64(element, CONSTANT_STRING("x1"));
             pair->y1 = convert_element_to_f64(element, CONSTANT_STRING("y1"));
-            /*
-            printf("x0: %lf\n", pair->x0);
-            printf("y0: %lf\n", pair->y0);
-            printf("x1: %lf\n", pair->x1);
-            printf("y1: %lf\n", pair->y1);
-            */
         }
     } else {
         fprintf(stderr, "Failed to lookup pairs array.\n");
