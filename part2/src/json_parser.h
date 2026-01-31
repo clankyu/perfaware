@@ -55,8 +55,6 @@ struct Json_Element {
     Json_Element *next_sibling;
 };
 
-#define CONSTANT_STRING(string) (Buffer) { .data = (void*)string, .count = sizeof(string) - 1 }
-
 u64 parse_haversine_pairs(Buffer input_json, Haversine_Pair *pairs);
 
 Json_Element *parse_json(Buffer input_json);

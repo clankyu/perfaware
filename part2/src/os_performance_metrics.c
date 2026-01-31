@@ -6,7 +6,9 @@
 
 #include "os_performance_metrics.h"
 
-u64 read_cpu_timer() {
+Profiler program_profiler;
+
+inline u64 read_cpu_timer() {
     return __rdtsc();
 }
 
@@ -69,39 +71,30 @@ u64 get_os_timer_freq() {
     return 1000000;
 }
 
-Profiler init_profiler() {
-    Profiler result = {0};
-    return result;
-}
-
-void profiler_start(Profiler *profiler) {
-    profiler->cpu_start = read_cpu_timer();
-}
-
-void profiler_end(Profiler *profiler) {
-    profiler->cpu_end = read_cpu_timer();
-
+void end_profile(Profile_Block *block) {
+    block->cpu_end = read_cpu_timer();
     u64 cpu_freq = get_cpu_freq_fast();
-    f64 result = ((f64)profiler->cpu_end - (f64)profiler->cpu_start) / (f64)cpu_freq;
-    profiler->time_elapsed_seconds = result;
+    f64 result = ((f64)block->cpu_end - (f64)block->cpu_start) / (f64)cpu_freq;
+    block->time_seconds = result;
+
+    program_profiler.blocks[block->profiler_at] = *block;
 }
 
-void profiler_calculate(Profiler *profiler) {
+
+void end_program_profiler() {
+    Profile_Block *program_block = &program_profiler.blocks[0];
+    program_block->cpu_end = read_cpu_timer();
     u64 cpu_freq = get_cpu_freq_fast();
-    f64 result = ((f64)profiler->cpu_end - (f64)profiler->cpu_start) / (f64)cpu_freq;
-    profiler->time_elapsed_seconds = result;
+    f64 result = ((f64)program_block->cpu_end - (f64)program_block->cpu_start) / (f64)cpu_freq;
+    program_block->time_seconds = result;
 }
 
-f64 profiler_time(Profiler profiler) {
-    return profiler.time_elapsed_seconds;
-}
-
-f64 percentage_time_taken(Profiler profiler, f64 total_time_seconds) {
-    return profiler.time_elapsed_seconds / total_time_seconds * 100.0f;
-}
-
-void print_profiler_stats(Profiler profiler, char *profiler_name, f64 total_time_seconds) {
-    f64 percent_time_taken = percentage_time_taken(profiler, total_time_seconds);
-    u64 cycles_elapsed = profiler.cpu_end - profiler.cpu_start;
-    printf("%s: %lu cycles elapsed, %lf seconds elapsed (%.4f%%)\n", profiler_name, cycles_elapsed, profiler.time_elapsed_seconds, percent_time_taken);
+void profiler_stats() {
+    f64 program_total_elapsed = program_profiler.blocks[0].time_seconds;
+    for (u32 i = 0; i < program_profiler.at; i++) {
+        Profile_Block block = program_profiler.blocks[i];
+        f64 percent_time_taken = block.time_seconds / program_total_elapsed * 100.0f;
+        u64 cycles_elapsed = block.cpu_end - block.cpu_start;
+        printf("%.*s: %lu cycles elapsed, %lf seconds elapsed (%.4f%%)\n", block.name.count, block.name.data, cycles_elapsed, block.time_seconds, percent_time_taken);
+    }
 }
