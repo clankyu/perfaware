@@ -68,13 +68,6 @@ int main(int argc, char** argv) {
 
     profiler_end(&program_profiler);
 
-    f64 time_elapsed =
-        startup_profiler.time_elapsed_seconds +
-        read_profiler.time_elapsed_seconds +
-        parse_profiler.time_elapsed_seconds +
-        sum_profiler.time_elapsed_seconds +
-        output_profiler.time_elapsed_seconds;
-
     printf("\n");
     printf("Total time elapsed: %lf seconds\n", program_profiler.time_elapsed_seconds);
     print_profiler_stats(startup_profiler, "Startup", program_profiler.time_elapsed_seconds);
