@@ -4,31 +4,31 @@
 #include "buffer.h"
 #include "haversine_generator.h"
 #include "json_parser.h"
-#include "os_performance_metrics.h"
+#include "profiler.h"
 
 int main(int argc, char** argv) {
-    start_profiler;
+    begin_profiler();
     printf("Starting haversine processor.\n");
 
     char *json_input_name;
     char *answers_name;
 
-    if (argc == 3) {
-        json_input_name = argv[1];
-        answers_name = argv[2];
-    } else {
-        fprintf(stderr, "Error. Not enough arguments given. Example: ./run json_input.json answers.f64\n");
-        return -1;
+    {
+        time_block("setup");
+        if (argc == 3) {
+            json_input_name = argv[1];
+            answers_name = argv[2];
+        } else {
+            fprintf(stderr, "Error. Not enough arguments given. Example: ./run json_input.json answers.f64\n");
+            return -1;
+        }
     }
-
-    //test_parsing();
-
 
     Buffer json_input;
     Buffer parsed_values;
 
     {
-        profile_scope("read");
+        time_block("read");
 
         json_input = buffer_from_file(json_input_name);
         parsed_values = allocate_buffer(MAX_PAIRS * sizeof(Haversine_Pair));
@@ -42,24 +42,28 @@ int main(int argc, char** argv) {
         Haversine_Pair *pairs = (Haversine_Pair*)parsed_values.data;
         pair_count = parse_haversine_pairs(json_input, pairs);
 
-        for (u32 i = 0; i < pair_count; i++) {
-            Haversine_Pair pair = pairs[i];
-            sum += haversine_distance(&pair);
+        {
+            time_block("sum");
+            for (u32 i = 0; i < pair_count; i++) {
+                Haversine_Pair pair = pairs[i];
+                sum += haversine_distance(&pair);
+            }
+
+            average = sum / (f64)pair_count;
         }
-
-        average = sum / (f64)pair_count;
-
     } else {
         fprintf(stderr, "Failed to create buffer for json input and/or parsed values.\nparsed_values.count = %u\njson_input.count = %u\n", parsed_values.count, json_input.count);
     }
 
-    printf("Sum: %lf\n", sum);
-    printf("Average: %lf\n", average);
-    printf("Pair count: %lu\n", pair_count);
-
+    {
+        time_block("output");
+        printf("Sum: %lf\n", sum);
+        printf("Average: %lf\n", average);
+        printf("Pair count: %lu\n", pair_count);
+    }
     printf("\n");
 
-    end_profiler;
+    end_profiler();
 
     profiler_stats();
 
