@@ -1,61 +1,73 @@
 #include "profiler.h"
 #include "util.h"
+#include <stdio.h>
 #include "os_performance_metrics.h"
 
 void begin_profiler() {
-    global_program_profiler.count++;
     global_program_profiler.anchors[0].name = "program";
+    global_program_profiler.start_tsc = read_cpu_timer();
 }
 
 void end_profiler() {
-    u64 tsc_elapsed = read_cpu_timer();
-    u64 cpu_freq = get_cpu_freq_fast();
-    f64 total_seconds_elapsed = (f64)tsc_elapsed / (f64)cpu_freq;
+    global_program_profiler.end_tsc = read_cpu_timer();
 }
 
 Profile_Block add_block(char const *name_, u32 anchor_index_) {
-    Profiler p = global_program_profiler;
     Profile_Block result = {
-        .start_tsc = get_cpu_freq_fast(),
         .anchor_index = anchor_index_,
+        .parent_index = global_profiler_parent,
         .name = name_
     };
 
-    p.anchors[anchor_index_].hit_count++;
-    p.count++;
+    global_profiler_parent = anchor_index_;
+    global_program_profiler.anchors[anchor_index_].hit_count++;
+
+    result.start_tsc = read_cpu_timer();
 
     return result;
 }
 
 void end_block(Profile_Block *block) {
+    u64 start_tsc = block->start_tsc;
+    u64 end_tsc = read_cpu_timer();
+    u64 tsc_elapsed = end_tsc - start_tsc;
 
+    Profile_Anchor *anchor = global_program_profiler.anchors + block->anchor_index;
+    Profile_Anchor *parent_anchor = global_program_profiler.anchors + block->parent_index;
+
+    anchor->tsc_elapsed += tsc_elapsed;
+    parent_anchor->children_tsc_elapsed += tsc_elapsed;
+    ++anchor->hit_count;
+
+    anchor->name = block->name;
 }
-/*
-void end_profile(Profile_Block *block) {
-    block->cpu_end = read_cpu_timer();
+
+void print_time_elapsed(u64 total_tsc_elapsed, Profile_Anchor *anchor) {
     u64 cpu_freq = get_cpu_freq_fast();
-    f64 result = ((f64)block->cpu_end - (f64)block->cpu_start) / (f64)cpu_freq;
-    block->time_seconds = result;
+    u64 elapsed = anchor->tsc_elapsed - anchor->children_tsc_elapsed;
+    f64 percent = (f64)elapsed / (f64)total_tsc_elapsed * 100.0f;
 
-    program_profiler.blocks[block->profiler_at] = *block;
+    f64 seconds_elapsed = (f64)elapsed / (f64)cpu_freq;
+    printf("  %s[%lu]: %lu (%.2f%%", anchor->name, anchor->hit_count, elapsed, percent);
+    if (anchor->children_tsc_elapsed) {
+        f64 percent_with_children = (f64)(elapsed + anchor->children_tsc_elapsed) / (f64) total_tsc_elapsed * 100.0f;
+        printf(", %.2f%% w/children", percent_with_children);
+    }
+
+    printf(")\n");
 }
 
+void print_profile() {
+    u64 start_tsc = global_program_profiler.start_tsc;
+    u64 end_tsc = global_program_profiler.end_tsc;
 
-void end_program_profiler() {
-    Profile_Block *program_block = &program_profiler.blocks[0];
-    program_block->cpu_end = read_cpu_timer();
-    u64 cpu_freq = get_cpu_freq_fast();
-    f64 result = ((f64)program_block->cpu_end - (f64)program_block->cpu_start) / (f64)cpu_freq;
-    program_block->time_seconds = result;
-}
+    u64 total_tsc_elapsed = end_tsc - start_tsc;
 
-void profiler_stats() {
-    f64 program_total_elapsed = program_profiler.blocks[0].time_seconds;
-    for (u32 i = 0; i < program_profiler.at; i++) {
-        Profile_Block block = program_profiler.blocks[i];
-        f64 percent_time_taken = block.time_seconds / program_total_elapsed * 100.0f;
-        u64 cycles_elapsed = block.cpu_end - block.cpu_start;
-        printf("%.*s: %lu cycles elapsed, %lf seconds elapsed (%.4f%%)\n", block.name.count, block.name.data, cycles_elapsed, block.time_seconds, percent_time_taken);
+    for (u32 anchor_index = 0; anchor_index < array_count(global_program_profiler.anchors); anchor_index++) {
+        Profile_Anchor *anchor = &global_program_profiler.anchors[anchor_index];
+
+        if (anchor->tsc_elapsed) {
+            print_time_elapsed(total_tsc_elapsed, anchor);
+        }
     }
 }
-*/

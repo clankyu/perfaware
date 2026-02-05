@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 
     end_profiler();
 
-    profiler_stats();
+    print_profile();
 
     return 0;
 }

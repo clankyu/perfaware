@@ -2,12 +2,12 @@
 #include <math.h>
 #include "json_parser.h"
 #include "haversine_generator.h"
-#include "os_performance_metrics.h"
+#include "profiler.h"
 
 #include "util.h"
 
 u64 parse_haversine_pairs(Buffer input_json, Haversine_Pair *pairs) {
-    profile_function;
+    time_function;
     u64 pair_count = 0;
 
     Json_Element *parsed_json = parse_json(input_json);
