@@ -12,16 +12,6 @@ typedef struct{
     char const *name;
 } Profile_Anchor;
 
-/*
-typedef struct {
-    Buffer name;
-    u64 cpu_start;
-    u64 cpu_end;
-    f64 time_seconds;
-    u32 profiler_at;
-} Profile_Block;
-*/
-
 typedef struct {
     u64 start_tsc;
     u32 anchor_index;
