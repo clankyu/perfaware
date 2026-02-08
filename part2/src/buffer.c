@@ -1,7 +1,8 @@
-#include "util.h"
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "util.h"
+#include "profiler.h"
 #include "buffer.h"
 
 b32 in_bounds(Buffer buffer, u32 at) {
@@ -54,7 +55,11 @@ Buffer buffer_from_file(const char *file_name) {
     rewind(file);
 
     result = allocate_buffer(file_size);
-    fread(result.data, result.count, 1, file);
+    {
+        time_bandwidth("fread", file_size);
+
+        fread(result.data, result.count, 1, file);
+    }
 
     fclose(file);
 

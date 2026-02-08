@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
         pair_count = parse_haversine_pairs(json_input, pairs);
 
         {
-            time_block("sum");
+            time_bandwidth("sum", pair_count*sizeof(Haversine_Pair));
             for (u32 i = 0; i < pair_count; i++) {
                 Haversine_Pair pair = pairs[i];
                 sum += haversine_distance(&pair);

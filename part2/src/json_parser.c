@@ -245,7 +245,6 @@ Json_Element *parse_json_list(Parser *parser, Json_Token starting_token, Json_To
 }
 
 Json_Element *lookup_json_element(Json_Element *object, Buffer element_name) {
-    time_function;
     Json_Element *result = 0;
 
     if (object) {

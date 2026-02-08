@@ -1,13 +1,14 @@
 #include <stdio.h>
+
 #include "profiler.h"
 
 #ifdef PROFILER
 
 #include "util.h"
-#include <stdio.h>
 #include "os_performance_metrics.h"
+#include <stdio.h>
 
-Profile_Block add_block(char const *name_, u32 anchor_index_) {
+Profile_Block add_block(char const *name_, u32 anchor_index_, u64 byte_count) {
     Profile_Block result = {
         .anchor_index = anchor_index_,
         .parent_index = global_profiler_parent,
@@ -16,6 +17,7 @@ Profile_Block add_block(char const *name_, u32 anchor_index_) {
 
     Profile_Anchor *anchor = global_profiler_anchors + anchor_index_;
     result.old_tsc_elapsed_inclusive = anchor->tsc_elapsed_inclusive;
+    anchor->processed_byte_count += byte_count;
 
     global_profiler_parent = result.anchor_index;
 
@@ -45,6 +47,7 @@ void end_block(Profile_Block *block) {
 void print_time_elapsed(u64 total_tsc_elapsed, Profile_Anchor *anchor) {
     u64 cpu_freq = get_cpu_freq_fast();
     f64 percent = (f64)anchor->tsc_elapsed_exclusive / (f64)total_tsc_elapsed * 100.0f;
+    printf("tsc_elapsed_exclusive: %lu\ntotal_tsc_elapsed: %lu\n", anchor->tsc_elapsed_exclusive, total_tsc_elapsed);
 
     f64 seconds_elapsed = (f64)anchor->tsc_elapsed_exclusive / (f64)cpu_freq;
 
@@ -55,7 +58,21 @@ void print_time_elapsed(u64 total_tsc_elapsed, Profile_Anchor *anchor) {
         printf(", %lf seconds (%.2f%%) w/children", seconds_elapsed_with_children, percent_with_children);
     }
 
-    printf(")\n");
+    printf(")");
+
+    if (anchor->processed_byte_count) {
+        f64 megabyte = 1024.0f*1024.0f;
+        f64 gigabyte = megabyte*1024.0f;
+
+        f64 seconds = (f64)anchor->tsc_elapsed_inclusive / (f64)cpu_freq;
+        f64 bytes_per_second = (f64)anchor->processed_byte_count / seconds;
+        f64 megabytes = (f64)anchor->processed_byte_count / (f64)megabyte;
+        f64 gigabytes_per_second = (f64)anchor->processed_byte_count / (f64)gigabyte;
+
+        printf("  %.3fmb at %.2fgb/s", megabytes, gigabytes_per_second);
+    }
+
+    printf("\n");
 }
 
 void print_anchor_data(u64 total_tsc_elapsed) {
