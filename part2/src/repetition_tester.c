@@ -5,7 +5,7 @@
 
 void new_test_wave(Repetition_Tester *tester, Read_Parameters *parameters, f64 seconds_to_try) {
     if (tester->mode == TestMode_uninitialized) {
-        *tester = (Repetition_Tester){0}; // this might bite me in the ass
+        *tester = (Repetition_Tester){0};
         tester->cpu_freq = get_cpu_freq_fast();
 
         if (parameters->name) {
@@ -19,6 +19,7 @@ void new_test_wave(Repetition_Tester *tester, Read_Parameters *parameters, f64 s
         tester->tests_started_at = read_cpu_timer();
     } else if (tester->mode == TestMode_completed) {
         tester->mode = TestMode_testing;
+        printf("test completed\n");
 
         if (tester->target_processed_byte_count != tester->bytes_accumulated_on_test) {
             test_error(tester, "Target processed byte count does not match bytes accumulated on test.");
@@ -33,41 +34,52 @@ b32 is_testing(Repetition_Tester *tester) {
     if (tester->mode == TestMode_testing) {
         u64 current_time = read_cpu_timer();
 
-        if (tester->open_block_count != tester->close_block_count) {
-            test_error(tester, "Open and close block count don't match.");
-        }
-        if (tester->bytes_accumulated_on_test != tester->target_processed_byte_count) {
-            test_error(tester, "Bytes accumulated on test don't match target processed byte count.");
-        }
+        if (tester->open_block_count) {
+            if (tester->open_block_count != tester->close_block_count) {
+                test_error(tester, "Open and close block count don't match.");
+            }
+            if (tester->bytes_accumulated_on_test != tester->target_processed_byte_count) {
+                printf("bytes accumulated on test: %lu\ntarget processed byte count: %lu\n", tester->bytes_accumulated_on_test, tester->target_processed_byte_count);
+                test_error(tester, "Bytes accumulated on test don't match target processed byte count.");
+            }
 
-        if (tester->mode == TestMode_testing) {
+            if (tester->mode == TestMode_testing) {
+                Repetition_Test_Results *results = &tester->results;
+                ++results->test_count;
+
+                u64 elapsed_time = tester->time_accumulated_on_test;
+                results->total_time += elapsed_time;
+
+                if (results->max_time < elapsed_time) {
+                    results->max_time = elapsed_time;
+                }
+
+                if (results->min_time > elapsed_time) {
+                    results->min_time = elapsed_time;
+
+                    tester->tests_started_at = current_time;
+
+                    print_time("Min", results->min_time, tester->cpu_freq, tester->target_processed_byte_count);
+
+                }
+
+                tester->open_block_count = 0;
+                tester->close_block_count = 0;
+                tester->time_accumulated_on_test = 0;
+                tester->bytes_accumulated_on_test = 0;
+            }
+
+            if (current_time - tester->tests_started_at > tester->try_for_time) {
+                tester->mode = TestMode_completed;
+                print_results(tester->results, tester->cpu_freq, tester->target_processed_byte_count);
+            }
+        } else {
             Repetition_Test_Results *results = &tester->results;
-            ++results->test_count;
 
-            u64 elapsed_time = tester->time_accumulated_on_test;
-            results->total_time += elapsed_time;
-
-            if (results->max_time < elapsed_time) {
-                results->max_time = elapsed_time;
-            }
-            if (results->min_time > elapsed_time) {
-                results->min_time = elapsed_time;
-
-                tester->tests_started_at = current_time;
-
-                print_time("Min", results->min_time, tester->cpu_freq, tester->target_processed_byte_count);
-            }
+            results->min_time = tester->time_accumulated_on_test;
+            tester->tests_started_at = current_time;
+            print_time("Min", results->min_time, tester->cpu_freq, tester->target_processed_byte_count);
         }
-
-        if (current_time - tester->tests_started_at > tester->try_for_time) {
-            tester->mode = TestMode_completed;
-            print_results(tester->results, tester->cpu_freq, tester->target_processed_byte_count);
-        }
-
-        tester->open_block_count = 0;
-        tester->close_block_count = 0;
-        tester->time_accumulated_on_test = 0;
-        tester->bytes_accumulated_on_test = 0;
     }
 
     b32 result = (tester->mode == TestMode_testing) ? true : false;

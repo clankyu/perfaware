@@ -25,16 +25,18 @@ int main(int argc, char **argv) {
     read_parameters.name = argv[1];
 
     Repetition_Tester testers[array_count(functions)] = {0};
-    for (;;) {
-        for (u32 function_index = 0; function_index < array_count(functions); ++function_index) {
-            Repetition_Tester *tester = testers + function_index;
-            Read_Test test_function = functions[function_index];
+    for (u32 function_index = 0; function_index < array_count(functions); ++function_index) {
+        Repetition_Tester *tester = testers + function_index;
+        Read_Test test_function = functions[function_index];
 
-            printf("\n--- %s ---\n", test_function.name);
-            new_test_wave(tester, &read_parameters, seconds_to_try);
-            test_function.function(tester, &read_parameters);
+        printf("\n--- %s ---\n", test_function.name);
+        new_test_wave(tester, &read_parameters, seconds_to_try);
+        test_function.function(tester, &read_parameters);
+        if (tester->mode == TestMode_error) {
+            goto end;
         }
     }
 
+end:
     return 0;
 }
