@@ -10,6 +10,12 @@ void fread_test(Repetition_Tester *tester, Read_Parameters *parameters) {
         FILE *file = fopen(parameters->name, "rb");
 
         if (file) {
+            u32 file_size = 0;
+            fseek(file, 0L, SEEK_END);
+            file_size = ftell(file);
+            rewind(file);
+            dest_buffer.count = file_size;
+
             start_time(tester);
             size_t result = fread(dest_buffer.data, dest_buffer.count, 1, file);
             end_time(tester);

@@ -19,7 +19,6 @@ void new_test_wave(Repetition_Tester *tester, Read_Parameters *parameters, f64 s
         tester->tests_started_at = read_cpu_timer();
     } else if (tester->mode == TestMode_completed) {
         tester->mode = TestMode_testing;
-        printf("test completed\n");
 
         if (tester->target_processed_byte_count != tester->bytes_accumulated_on_test) {
             test_error(tester, "Target processed byte count does not match bytes accumulated on test.");
@@ -54,13 +53,17 @@ b32 is_testing(Repetition_Tester *tester) {
                     results->max_time = elapsed_time;
                 }
 
+                if (results->test_count == 1) {
+                    results->min_time = tester->time_accumulated_on_test;
+                    tester->tests_started_at = current_time;
+                    print_time("Min", results->min_time, tester->cpu_freq, tester->target_processed_byte_count);
+                }
                 if (results->min_time > elapsed_time) {
                     results->min_time = elapsed_time;
 
                     tester->tests_started_at = current_time;
 
                     print_time("Min", results->min_time, tester->cpu_freq, tester->target_processed_byte_count);
-
                 }
 
                 tester->open_block_count = 0;
@@ -69,20 +72,14 @@ b32 is_testing(Repetition_Tester *tester) {
                 tester->bytes_accumulated_on_test = 0;
             }
 
-            if (current_time - tester->tests_started_at > tester->try_for_time) {
+            if ((current_time - tester->tests_started_at) > tester->try_for_time) {
                 tester->mode = TestMode_completed;
                 print_results(tester->results, tester->cpu_freq, tester->target_processed_byte_count);
             }
-        } else {
-            Repetition_Test_Results *results = &tester->results;
-
-            results->min_time = tester->time_accumulated_on_test;
-            tester->tests_started_at = current_time;
-            print_time("Min", results->min_time, tester->cpu_freq, tester->target_processed_byte_count);
         }
     }
 
-    b32 result = (tester->mode == TestMode_testing) ? true : false;
+    b32 result = (tester->mode == TestMode_testing);
     return result;
 }
 
