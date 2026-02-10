@@ -10,14 +10,13 @@ int main(int argc, char **argv) {
     u32 seconds_to_try = 10;
 
     if (argc > 1) {
-        printf("arg[1]: %s\n", argv[1]);
         if (argc > 2) {
             seconds_to_try = (u32)atoi(argv[2]);
-            printf("seconds to try: %u\n", seconds_to_try);
-        }
+       }
 
         Read_Test functions[] = {
             (Read_Test) { .name = "fread", .function = fread_test },
+            (Read_Test) { .name = "mmap", .function = mmap_test },
         };
 
         Read_Parameters read_parameters = {0};
