@@ -47,7 +47,6 @@ void end_block(Profile_Block *block) {
 void print_time_elapsed(u64 total_tsc_elapsed, Profile_Anchor *anchor) {
     u64 cpu_freq = get_cpu_freq_fast();
     f64 percent = (f64)anchor->tsc_elapsed_exclusive / (f64)total_tsc_elapsed * 100.0f;
-    printf("tsc_elapsed_exclusive: %lu\ntotal_tsc_elapsed: %lu\n", anchor->tsc_elapsed_exclusive, total_tsc_elapsed);
 
     f64 seconds_elapsed = (f64)anchor->tsc_elapsed_exclusive / (f64)cpu_freq;
 
@@ -69,7 +68,7 @@ void print_time_elapsed(u64 total_tsc_elapsed, Profile_Anchor *anchor) {
         f64 megabytes = (f64)anchor->processed_byte_count / (f64)megabyte;
         f64 gigabytes_per_second = (f64)anchor->processed_byte_count / (f64)gigabyte;
 
-        printf("  %.3fmb at %.2fgb/s", megabytes, gigabytes_per_second);
+        printf("  %.3fmb at %.4fgb/s", megabytes, gigabytes_per_second);
     }
 
     printf("\n");
