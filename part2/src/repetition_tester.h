@@ -51,3 +51,5 @@ void count_bytes(Repetition_Tester *tester, u64 bytes);
 void start_time(Repetition_Tester *tester);
 void end_time(Repetition_Tester *tester);
 void test_error(Repetition_Tester *tester, char const *message);
+void print_time(char const *label, u64 total_cpu, u64 cpu_freq, u64 bytes_processed);
+void print_results(Repetition_Test_Results results, u64 cpu_freq, u64 processed_byte_count);

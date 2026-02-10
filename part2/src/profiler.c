@@ -66,7 +66,7 @@ void print_time_elapsed(u64 total_tsc_elapsed, Profile_Anchor *anchor) {
         f64 seconds = (f64)anchor->tsc_elapsed_inclusive / (f64)cpu_freq;
         f64 bytes_per_second = (f64)anchor->processed_byte_count / seconds;
         f64 megabytes = (f64)anchor->processed_byte_count / (f64)megabyte;
-        f64 gigabytes_per_second = (f64)anchor->processed_byte_count / (f64)gigabyte;
+        f64 gigabytes_per_second = (f64)bytes_per_second / (f64)gigabyte;
 
         printf("  %.3fmb at %.4fgb/s", megabytes, gigabytes_per_second);
     }
