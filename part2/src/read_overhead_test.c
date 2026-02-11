@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <memory.h>
 #include <unistd.h>
+#include <malloc.h>
 
 #include "repetition_tester.h"
 #include "read_overhead_test.h"
@@ -15,6 +16,7 @@ void fread_test(Repetition_Tester *tester, Read_Parameters *parameters) {
         FILE *file = fopen(parameters->name, "rb");
 
         if (file) {
+            handle_allocation(parameters, &dest_buffer);
             u32 file_size = 0;
             fseek(file, 0L, SEEK_END);
             file_size = ftell(file);
@@ -27,12 +29,12 @@ void fread_test(Repetition_Tester *tester, Read_Parameters *parameters) {
 
             if (result == 1) {
                 count_bytes(tester, dest_buffer.count);
-                tester->target_processed_byte_count = file_size;
             } else {
                 test_error(tester, "fread failed");
             }
 
             fclose(file);
+            handle_deallocation(parameters, &dest_buffer);
         } else {
             test_error(tester, "fopen failed");
         }
@@ -41,27 +43,30 @@ void fread_test(Repetition_Tester *tester, Read_Parameters *parameters) {
 
 void mmap_test(Repetition_Tester *tester, Read_Parameters *parameters) {
     while (is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
         s32 fd = open(parameters->name, O_RDONLY);
         struct stat st;
 
         if (fstat(fd, &st) == 0) {
+            handle_allocation(parameters, &dest_buffer);
             off_t size = st.st_size;
 
-            start_time(tester);
             u8 *data = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
-            memcpy(parameters->dest.data, data, size);
-            end_time(tester);
-
-            if (munmap(data, size) == -1) {
-                fprintf(stderr, "Munmap failed.");
+            if (data != MAP_FAILED) {
+                start_time(tester);
+                memcpy(dest_buffer.data, data, size);
+                end_time(tester);
+                munmap(data, size);
+            } else {
+                test_error(tester, "mmap error.");
             }
 
-            close(fd);
-
+            handle_deallocation(parameters, &dest_buffer);
             count_bytes(tester, size);
-            tester->target_processed_byte_count = size;
         } else {
             test_error(tester, "Failed to open file for mmap test.");
         }
+
+        close(fd);
     }
 }

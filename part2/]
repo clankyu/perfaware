@@ -9,6 +9,7 @@ void new_test_wave(Repetition_Tester *tester, Read_Parameters *parameters, f64 s
         tester->cpu_freq = get_cpu_freq_fast();
 
         if (parameters->name) {
+            parameters->dest = buffer_from_file(parameters->name);
             tester->target_processed_byte_count = parameters->dest.count;
         } else {
             test_error(tester, "Missing file name");
@@ -117,7 +118,6 @@ void print_time(char const *label, u64 total_cpu, u64 cpu_freq, u64 bytes_proces
 }
 
 void print_results(Repetition_Test_Results results, u64 cpu_freq, u64 processed_byte_count) {
-    printf("\r\033[K");
     print_time("Min", (f64)results.min_time, cpu_freq, processed_byte_count);
     printf("\n");
 
@@ -131,37 +131,3 @@ void print_results(Repetition_Test_Results results, u64 cpu_freq, u64 processed_
     }
 }
 
-void handle_allocation(Read_Parameters *parameters, Buffer *buffer) {
-    switch (parameters->allocation_type) {
-        case AllocType_none: {} break;
-        case AllocType_malloc: {
-            *buffer = allocate_buffer(parameters->dest.count);
-        } break;
-        default: {
-            fprintf(stderr, "Error. Unrecognized alloc type: %u.\n", parameters->allocation_type);
-        }
-    }
-}
-
-void handle_deallocation(Read_Parameters *parameters, Buffer *buffer) {
-    switch (parameters->allocation_type) {
-        case AllocType_none: {} break;
-        case AllocType_malloc: {
-            free_buffer(buffer);
-        } break;
-        default: {
-            fprintf(stderr, "Error. Unrecognized alloc type: %u.\n", parameters->allocation_type);
-        }
-    }
-}
-
-char const *get_allocation_str(Allocation_Type alloc_type) {
-    char const *result;
-    switch (alloc_type) {
-        case AllocType_none: { result = ""; } break;
-        case AllocType_malloc: { result = "malloc"; } break;
-        default: { result = "unknown"; }
-    }
-
-    return result;
-}

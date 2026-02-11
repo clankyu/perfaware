@@ -4,6 +4,13 @@
 #include "buffer.h"
 
 typedef enum {
+    AllocType_none,
+    AllocType_malloc,
+
+    AllocType_count
+} Allocation_Type;
+
+typedef enum {
     TestMode_uninitialized,
     TestMode_testing,
     TestMode_completed,
@@ -19,6 +26,7 @@ typedef struct {
 
 typedef struct {
     Buffer dest;
+    Allocation_Type allocation_type;
     char *name;
 } Read_Parameters;
 
@@ -44,6 +52,10 @@ typedef struct {
     char *name;
     Read_Test_Function function;
 } Read_Test;
+
+void handle_allocation(Read_Parameters *parameters, Buffer *buffer);
+void handle_deallocation(Read_Parameters *parameters, Buffer *buffer);
+char const *get_allocation_str(Allocation_Type alloc_type);
 
 void new_test_wave(Repetition_Tester *tester, Read_Parameters *parameters, f64 seconds_to_try);
 b32 is_testing(Repetition_Tester *tester);
