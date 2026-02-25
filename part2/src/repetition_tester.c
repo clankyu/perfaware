@@ -33,46 +33,51 @@ void new_test_wave(Repetition_Tester *tester, Read_Parameters *parameters, f64 s
 
 b32 is_testing(Repetition_Tester *tester) {
     if (tester->mode == TestMode_testing) {
+        Repetition_Test_Values accum = tester->values_on_this_test;
         u64 current_time = read_cpu_timer();
 
         if (tester->open_block_count) {
             if (tester->open_block_count != tester->close_block_count) {
                 test_error(tester, "Open and close block count don't match.");
             }
-            if (tester->bytes_accumulated_on_test != tester->target_processed_byte_count) {
-                printf("bytes accumulated on test: %lu\ntarget processed byte count: %lu\n", tester->bytes_accumulated_on_test, tester->target_processed_byte_count);
+            if (accum.byte_count != tester->target_processed_byte_count) {
+                printf("bytes accumulated on test: %lu\ntarget processed byte count: %lu\n", tester->results.total.byte_count, tester->target_processed_byte_count);
                 test_error(tester, "Bytes accumulated on test don't match target processed byte count.");
             }
 
             if (tester->mode == TestMode_testing) {
                 Repetition_Test_Results *results = &tester->results;
-                ++results->test_count;
+                ++accum.test_count;
 
-                u64 elapsed_time = tester->time_accumulated_on_test;
-                results->total_time += elapsed_time;
+                u64 elapsed_time = accum.total_time;
+                results->total.total_time += elapsed_time;
+                results->total.byte_count += accum.byte_count;
+                results->total.mem_pagefault_count += accum.mem_pagefault_count;
+                ++results->total.test_count;
 
-                if (results->max_time < elapsed_time) {
-                    results->max_time = elapsed_time;
+                if (results->max.total_time < elapsed_time) {
+                    results->max = accum;
                 }
 
-                if (results->test_count == 1) {
-                    results->min_time = tester->time_accumulated_on_test;
-                    tester->tests_started_at = current_time;
-                    print_time("Min", results->min_time, tester->cpu_freq, tester->target_processed_byte_count);
-                }
-                if (results->min_time > elapsed_time) {
-                    results->min_time = elapsed_time;
-
+                if (results->total.test_count == 1) {
+                    results->min = accum;
                     tester->tests_started_at = current_time;
 
                     printf("\r\033[K");
-                    print_time("Min", results->min_time, tester->cpu_freq, tester->target_processed_byte_count);
+                    print_values("Min", tester->cpu_freq, results->min);
+                }
+
+                if (results->min.total_time > elapsed_time) {
+                    results->min = accum;
+                    tester->tests_started_at = current_time;
+
+                    printf("\r\033[K");
+                    print_values("Min", tester->cpu_freq, results->min);
                 }
 
                 tester->open_block_count = 0;
                 tester->close_block_count = 0;
-                tester->time_accumulated_on_test = 0;
-                tester->bytes_accumulated_on_test = 0;
+                tester->values_on_this_test = (Repetition_Test_Values){0};
             }
 
         }
@@ -94,39 +99,51 @@ void test_error(Repetition_Tester *tester, char const *message) {
 }
 
 inline void count_bytes(Repetition_Tester *tester, u64 bytes) {
-    tester->bytes_accumulated_on_test += bytes;
+    tester->values_on_this_test.byte_count += bytes;
 }
 
 inline void start_time(Repetition_Tester *tester) {
     ++tester->open_block_count;
-    tester->time_accumulated_on_test -= read_cpu_timer();
+    tester->values_on_this_test.total_time -= read_cpu_timer();
+    tester->values_on_this_test.mem_pagefault_count -= get_os_minor_page_faults();
 }
 
 inline void end_time(Repetition_Tester *tester) {
     ++tester->close_block_count;
-    tester->time_accumulated_on_test += read_cpu_timer();
+    tester->values_on_this_test.total_time += read_cpu_timer();
+    tester->values_on_this_test.mem_pagefault_count += get_os_minor_page_faults();
 }
 
-void print_time(char const *label, u64 total_cpu, u64 cpu_freq, u64 bytes_processed) {
-    f64 seconds = (f64)total_cpu / (f64)cpu_freq;
+void print_values(char const *label, u64 cpu_freq, Repetition_Test_Values values) {
+    f64 seconds = (f64)values.total_time / (f64)cpu_freq;
     f64 gigabyte = 1024.0f*1024.0f*1024.0f;
-    f64 throughput = (f64)(bytes_processed/seconds) / gigabyte;
+    f64 throughput = (f64)(values.byte_count/seconds) / gigabyte;
 
     printf("%s: (%.4f ms), %.4f gb/s", label, seconds*1000.0f, throughput);
+    if(values.mem_pagefault_count > 0) {
+        printf(" PF: %0.4f (%0.4fk/fault)", (f64)values.mem_pagefault_count, values.byte_count / (values.mem_pagefault_count * 1024.0));
+    } else {
+        printf(" NO PF");
+    }
     fflush(stdout);
 }
 
 void print_results(Repetition_Test_Results results, u64 cpu_freq, u64 processed_byte_count) {
     printf("\r\033[K");
-    print_time("Min", (f64)results.min_time, cpu_freq, processed_byte_count);
+    print_values("Min", cpu_freq, results.min);
     printf("\n");
 
-    print_time("Max", (f64)results.max_time, cpu_freq, processed_byte_count);
+    print_values("Max", cpu_freq, results.max);
     printf("\n");
 
-    if(results.test_count)
+    if(results.total.test_count)
     {
-        print_time("Avg", (f64)results.total_time / (f64)results.test_count, cpu_freq, processed_byte_count);
+        Repetition_Test_Values average = {0};
+        average.total_time = (f64) results.total.total_time / (f64) results.total.test_count;
+        average.byte_count = results.total.byte_count / results.total.test_count;
+        average.mem_pagefault_count = results.total.mem_pagefault_count / results.total.test_count;
+
+        print_values("Avg", cpu_freq, average);
         printf("\n");
     }
 }

@@ -6,6 +6,18 @@
 
 #include "os_performance_metrics.h"
 
+u64 get_os_minor_page_faults() {
+    u64 result = 0;
+    struct rusage usage;
+    if (getrusage(RUSAGE_SELF, &usage) == 0) {
+        result = usage.ru_minflt;
+    } else {
+        fprintf(stderr, "Error: Failed to get page fault count\n");
+    }
+
+    return result;
+}
+
 inline u64 read_cpu_timer() {
     return __rdtsc();
 }

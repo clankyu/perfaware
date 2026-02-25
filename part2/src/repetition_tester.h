@@ -17,11 +17,18 @@ typedef enum {
     TestMode_error
 } Test_Mode;
 
+
 typedef struct {
     u64 test_count;
     u64 total_time;
-    u64 max_time;
-    u64 min_time;
+    u64 mem_pagefault_count;
+    u64 byte_count;
+} Repetition_Test_Values;
+
+typedef struct {
+    Repetition_Test_Values min;
+    Repetition_Test_Values max;
+    Repetition_Test_Values total;
 } Repetition_Test_Results;
 
 typedef struct {
@@ -39,10 +46,8 @@ typedef struct {
     u32 open_block_count;
     u32 close_block_count;
 
-    u64 time_accumulated_on_test;
-    u64 bytes_accumulated_on_test;
-
     u64 tests_started_at;
+    Repetition_Test_Values values_on_this_test;
     Repetition_Test_Results results;
 } Repetition_Tester;
 
@@ -63,5 +68,5 @@ void count_bytes(Repetition_Tester *tester, u64 bytes);
 void start_time(Repetition_Tester *tester);
 void end_time(Repetition_Tester *tester);
 void test_error(Repetition_Tester *tester, char const *message);
-void print_time(char const *label, u64 total_cpu, u64 cpu_freq, u64 bytes_processed);
+void print_values(char const *label, u64 cpu_freq, Repetition_Test_Values values);
 void print_results(Repetition_Test_Results results, u64 cpu_freq, u64 processed_byte_count);

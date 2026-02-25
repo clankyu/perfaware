@@ -23,7 +23,6 @@ b32 buffers_are_equal(Buffer a, Buffer b) {
 }
 
 Buffer allocate_buffer(u32 size) {
-    printf("allocating yay\n");
     Buffer result = {0};
 
     result.data = (u8*) malloc(size);
