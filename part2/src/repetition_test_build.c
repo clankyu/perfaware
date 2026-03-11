@@ -1,4 +1,5 @@
 #include "read_overhead_test.c"
+#include "write_overhead_test.c"
 #include "repetition_tester.c"
 #include "os_performance_metrics.c"
 #include "buffer.c"
