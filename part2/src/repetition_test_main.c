@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include "repetition_tester.h"
 #include "read_overhead_test.h"
+#include "write_overhead_test.h"
 #include "util.h"
 
 #define READ_FILE_MAX_SIZE 1500000000
@@ -22,8 +23,8 @@ int main(int argc, char **argv) {
         }
 
         Read_Test functions[] = {
-            (Read_Test) { .name = "fread", .function = fread_test },
-            (Read_Test) { .name = "mmap", .function = mmap_test },
+            (Read_Test) { .name = "write_to_all_bytes", .function = write_to_all_bytes_test },
+            (Read_Test) { .name = "write_to_all_bytes_backwards", .function = write_to_all_bytes_backwards_test },
         };
 
         if (file_size) {
