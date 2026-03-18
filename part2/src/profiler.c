@@ -45,7 +45,7 @@ void end_block(Profile_Block *block) {
 }
 
 void print_time_elapsed(u64 total_tsc_elapsed, Profile_Anchor *anchor) {
-    u64 cpu_freq = get_cpu_freq_fast();
+    u64 cpu_freq = get_cpu_freq();
     f64 percent = (f64)anchor->tsc_elapsed_exclusive / (f64)total_tsc_elapsed * 100.0f;
 
     f64 seconds_elapsed = (f64)anchor->tsc_elapsed_exclusive / (f64)cpu_freq;
@@ -94,7 +94,7 @@ void end_profiler() {
 }
 
 void print_profile() {
-    u64 cpu_freq = get_cpu_freq_fast();
+    u64 cpu_freq = get_cpu_freq();
     u64 start_tsc = global_program_profiler.start_tsc;
     u64 end_tsc = global_program_profiler.end_tsc;
 

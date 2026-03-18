@@ -48,7 +48,7 @@ void print_anchor_data(u64 total_tsc_elapsed);
 #define time_function
 #define print_anchor_data(...)
 #define read_cpu_timer(...) 1
-#define get_cpu_freq_fast(...) 1
+#define get_cpu_freq(...) 1
 #endif
 
 typedef struct {

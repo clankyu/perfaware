@@ -27,7 +27,7 @@ int main(void) {
     printf("cpu timer: %lu -> %lu = %lu elapsed\n", cpu_start, cpu_end, cpu_elapsed);
     printf("cpu frequency: %lu\n", cpu_freq);
 
-    u64 real_cpu_freq = get_cpu_freq_fast();
+    u64 real_cpu_freq = get_cpu_freq();
     printf("real cpu frequency hz: %lu\n", real_cpu_freq);
 
     return 0;

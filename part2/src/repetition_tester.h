@@ -6,6 +6,8 @@
 typedef enum {
     AllocType_none,
     AllocType_malloc,
+    AllocType_mmap,
+    // AllocType_mmap_large_pages, note: couldn't get large pages working in wsl, not sure if it has anything to do with windows permissions, maybe at a later point
 
     AllocType_count
 } Allocation_Type;

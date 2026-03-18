@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #include "repetition_tester.h"
 #include "os_performance_metrics.h"
 #include "util.h"
@@ -6,7 +8,7 @@
 void new_test_wave(Repetition_Tester *tester, Read_Parameters *parameters, f64 seconds_to_try) {
     if (tester->mode == TestMode_uninitialized) {
         *tester = (Repetition_Tester){0};
-        tester->cpu_freq = get_cpu_freq_fast();
+        tester->cpu_freq = get_cpu_freq();
 
         if (parameters->name) {
             tester->target_processed_byte_count = parameters->dest.count;
@@ -154,6 +156,27 @@ void handle_allocation(Read_Parameters *parameters, Buffer *buffer) {
         case AllocType_malloc: {
             *buffer = allocate_buffer(parameters->dest.count);
         } break;
+        case AllocType_mmap: {
+            buffer->data = mmap(NULL, parameters->dest.count, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+            buffer->count = parameters->dest.count;
+
+            if (buffer->data == MAP_FAILED) {
+                fprintf(stderr, "Failed to allocate data via mmap.\n");
+            }
+        } break;
+        /*
+        case AllocType_mmap_large_pages: {
+            u32 missing_2mb_alignment = parameters->dest.count % (1024*1024);
+            u32 pages_in_allocation = parameters->dest.count / (1024*1024);
+            u32 aligned_size = (missing_2mb_alignment != 0) ? (1024*1024)*(pages_in_allocation + 1) : (1024*1024)*pages_in_allocation;
+            buffer->data = mmap(NULL, aligned_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+            buffer->count = parameters->dest.count;
+
+            if (buffer->data == MAP_FAILED) {
+                fprintf(stderr, "Failed to allocate data via mmap.\n");
+            }
+        } break;
+        */
         default: {
             fprintf(stderr, "Error. Unrecognized alloc type: %u.\n", parameters->allocation_type);
         }
@@ -166,6 +189,14 @@ void handle_deallocation(Read_Parameters *parameters, Buffer *buffer) {
         case AllocType_malloc: {
             free_buffer(buffer);
         } break;
+        case AllocType_mmap: {
+            munmap(buffer->data, buffer->count);
+        } break;
+        /*
+        case AllocType_mmap_large_pages: {
+            munmap(buffer->data, buffer->count);
+        } break;
+        */
         default: {
             fprintf(stderr, "Error. Unrecognized alloc type: %u.\n", parameters->allocation_type);
         }
@@ -177,6 +208,8 @@ char const *get_allocation_str(Allocation_Type alloc_type) {
     switch (alloc_type) {
         case AllocType_none: { result = ""; } break;
         case AllocType_malloc: { result = "malloc"; } break;
+        case AllocType_mmap: {result = "mmap"; } break;
+        //case AllocType_mmap_large_pages: {result = "mmap (large pages)"; } break;
         default: { result = "unknown"; }
     }
 
