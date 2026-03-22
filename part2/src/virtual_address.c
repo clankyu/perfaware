@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include "util.h"
 
 typedef struct {
@@ -20,7 +19,7 @@ void print_decomposed_pointer(Decomposed_Virtual_Address addr);
 int main(void) {
     u8 *memory = malloc(1024*1024);
 
-    u64 page_size = sysconf(_SC_PAGE_SIZE);
+    u64 page_size = 4096;
     u32 page_count = (1024*1024) / page_size;
     for (u32 page_index = 0; page_index < page_count; page_index++) {
         u64 addr = (u64) (memory + (page_index * page_size));

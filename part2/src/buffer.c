@@ -22,7 +22,7 @@ b32 buffers_are_equal(Buffer a, Buffer b) {
     return true;
 }
 
-Buffer allocate_buffer(u32 size) {
+Buffer allocate_buffer(u64 size) {
     Buffer result = {0};
 
     result.data = (u8*) malloc(size);

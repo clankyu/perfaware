@@ -6,7 +6,7 @@ void write_to_all_bytes_test(Repetition_Tester *tester, Read_Parameters *paramet
 
         handle_allocation(parameters, &dest_buffer);
         start_time(tester);
-        for (u32 i = 0; i < dest_buffer.count; ++i) {
+        for (u64 i = 0; i < dest_buffer.count; ++i) {
             dest_buffer.data[i] = (u8)i;
         }
         end_time(tester);
@@ -24,6 +24,58 @@ void write_to_all_bytes_backwards_test(Repetition_Tester *tester, Read_Parameter
         for (u32 i = 0; i < dest_buffer.count; ++i) {
             dest_buffer.data[dest_buffer.count - i - 1] = (u8)i;
         }
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void mov_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        start_time(tester);
+        mov_all_bytes_asm(dest_buffer.count, dest_buffer.data);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void nop_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        start_time(tester);
+        nop_all_bytes_asm(dest_buffer.count);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void cmp_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        start_time(tester);
+        cmp_all_bytes_asm(dest_buffer.count);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void dec_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        start_time(tester);
+        dec_all_bytes_asm(dest_buffer.count);
         end_time(tester);
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);

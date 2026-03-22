@@ -1,11 +1,14 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <memory.h>
-#include <unistd.h>
 #include <malloc.h>
+
+#ifdef __linux__
+#include <unistd.h>
+#include <sys/mman.h>
+#endif
 
 #include "repetition_tester.h"
 #include "read_overhead_test.h"
@@ -41,6 +44,7 @@ void fread_test(Repetition_Tester *tester, Read_Parameters *parameters) {
     }
 }
 
+#ifdef __linux__
 void mmap_test(Repetition_Tester *tester, Read_Parameters *parameters) {
     while (is_testing(tester)) {
         Buffer dest_buffer = parameters->dest;
@@ -70,3 +74,4 @@ void mmap_test(Repetition_Tester *tester, Read_Parameters *parameters) {
         close(fd);
     }
 }
+#endif

@@ -4,12 +4,12 @@
 
 typedef struct {
     u8 *data;
-    u32 count;
+    u64 count;
 } Buffer;
 
 b32 in_bounds(Buffer buffer, u32 at);
 b32 buffers_are_equal(Buffer a, Buffer b);
-Buffer allocate_buffer(u32 size);
+Buffer allocate_buffer(u64 size);
 void free_buffer(Buffer *buffer);
 Buffer buffer_from_file(const char *file_name);
 

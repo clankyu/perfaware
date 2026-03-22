@@ -11,6 +11,7 @@ inline u64 read_cpu_timer() {
 #include <unistd.h>
 #include <x86intrin.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 
 typedef struct {
     b32 initialized;
@@ -73,9 +74,11 @@ u64 read_os_timer() {
 u64 get_os_timer_freq() {
     return 1000000;
 }
+
 #elif _WIN32
 #include <windows.h>
 #include <intrin.h>
+#include <psapi.h>
 
 typedef struct {
     b32 initialized;
@@ -94,7 +97,7 @@ void initialize_os_metrics() {
 }
 
 u64 get_os_minor_page_faults() {
-    PROCESS_MEMORY_COUNTERS_EX memory_counters = {};
+    PROCESS_MEMORY_COUNTERS_EX memory_counters;
     memory_counters.cb = sizeof(memory_counters);
     GetProcessMemoryInfo(global_os_metrics.process_handle, (PROCESS_MEMORY_COUNTERS *)&memory_counters, sizeof(memory_counters));
 
@@ -110,12 +113,13 @@ u64 get_cpu_freq() {
         u64 ms_to_wait = 100;
         u64 os_freq = get_os_timer_freq();
 
+        u64 cpu_start = read_cpu_timer();
         u64 os_start = read_os_timer();
         u64 os_end = 0;
         u64 os_elapsed = 0;
         u64 os_wait_time = os_freq * ms_to_wait / 1000;
         while (os_elapsed < os_wait_time) {
-            os_end = read_os_timer;
+            os_end = read_os_timer();
             os_elapsed = os_end - os_start;
         }
 

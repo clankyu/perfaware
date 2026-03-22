@@ -3,8 +3,8 @@
 #include <time.h>
 
 void QueryPerformanceCounter(u64 *result){
+    //ignore bullshit
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     *result = (u64)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
 }
 

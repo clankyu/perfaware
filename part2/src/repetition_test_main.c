@@ -2,13 +2,16 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include "repetition_tester.h"
-#include "read_overhead_test.h"
+#include "buffer.h"
 #include "write_overhead_test.h"
 #include "util.h"
+#include "os_performance_metrics.h"
 
 #define READ_FILE_MAX_SIZE 1500000000
 
 int main(int argc, char **argv) {
+    initialize_os_metrics();
+
     u32 seconds_to_try = 10;
     u64 file_size = 0;
     Allocation_Type allocation_type = AllocType_none;
@@ -24,7 +27,10 @@ int main(int argc, char **argv) {
 
         Read_Test functions[] = {
             (Read_Test) { .name = "write_to_all_bytes", .function = write_to_all_bytes_test },
-            (Read_Test) { .name = "write_to_all_bytes_backwards", .function = write_to_all_bytes_backwards_test },
+            (Read_Test) { .name = "mov_all_bytes", .function = mov_all_bytes_test },
+            (Read_Test) { .name = "nop_all_bytes", .function = nop_all_bytes_test },
+            (Read_Test) { .name = "cmp_all_bytes", .function = cmp_all_bytes_test },
+            (Read_Test) { .name = "dec_all_bytes", .function = dec_all_bytes_test },
         };
 
         if (file_size) {

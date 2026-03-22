@@ -1,6 +1,8 @@
 #include <stdio.h>
+#ifdef __linux__
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 #include "repetition_tester.h"
 #include "os_performance_metrics.h"
 #include "util.h"
@@ -156,6 +158,7 @@ void handle_allocation(Read_Parameters *parameters, Buffer *buffer) {
         case AllocType_malloc: {
             *buffer = allocate_buffer(parameters->dest.count);
         } break;
+        #ifdef __linux__
         case AllocType_mmap: {
             buffer->data = mmap(NULL, parameters->dest.count, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
             buffer->count = parameters->dest.count;
@@ -177,6 +180,7 @@ void handle_allocation(Read_Parameters *parameters, Buffer *buffer) {
             }
         } break;
         */
+        #endif
         default: {
             fprintf(stderr, "Error. Unrecognized alloc type: %u.\n", parameters->allocation_type);
         }
@@ -189,6 +193,7 @@ void handle_deallocation(Read_Parameters *parameters, Buffer *buffer) {
         case AllocType_malloc: {
             free_buffer(buffer);
         } break;
+        #ifdef __linux__
         case AllocType_mmap: {
             munmap(buffer->data, buffer->count);
         } break;
@@ -197,6 +202,7 @@ void handle_deallocation(Read_Parameters *parameters, Buffer *buffer) {
             munmap(buffer->data, buffer->count);
         } break;
         */
+        #endif
         default: {
             fprintf(stderr, "Error. Unrecognized alloc type: %u.\n", parameters->allocation_type);
         }
@@ -208,8 +214,10 @@ char const *get_allocation_str(Allocation_Type alloc_type) {
     switch (alloc_type) {
         case AllocType_none: { result = ""; } break;
         case AllocType_malloc: { result = "malloc"; } break;
+        #ifdef __linux__
         case AllocType_mmap: {result = "mmap"; } break;
         //case AllocType_mmap_large_pages: {result = "mmap (large pages)"; } break;
+        #endif
         default: { result = "unknown"; }
     }
 

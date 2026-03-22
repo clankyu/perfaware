@@ -1,6 +1,5 @@
 #pragma once
 
-#include <sys/resource.h>
 #include "util.h"
 #include "buffer.h"
 
