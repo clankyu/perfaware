@@ -1,0 +1,58 @@
+// raddbg 0.9.24 project file
+
+recent_file: path: "src/branch_repetition_test_main.c"
+recent_file: path: "src/write_overhead_test.c"
+recent_file: path: "src/write_overhead_test.h"
+recent_file: path: "src/os_performance_metrics.c"
+recent_file: path: "src/repetition_test_main.c"
+recent_file: path: "src/buffer.c"
+recent_file: path: "../../../../../../Program Files (x86)/Windows Kits/10/include/10.0.26100.0/ucrt/stdio.h"
+recent_file: path: "src/repetition_tester.c"
+recent_file: path: "src/os_performance_metrics.h"
+recent_file: path: "../../../../../../Program Files (x86)/Windows Kits/10/include/10.0.26100.0/ucrt/corecrt_stdio_config.h"
+recent_file: path: "repeater.exe"
+recent_file: path: "src/haversine_formula.c"
+recent_file: path: repeater
+recent_file: path: "repeater.pdb"
+recent_file: path: processor
+recent_file: path: "../../CS50/seetesting.c"
+recent_file: path: "../../CS50/seetesting.exe"
+debug_info:
+{
+  path: "C:/Users/crist/Desktop/Programming/CS50/seetesting.exe"
+  timestamp: 66136836968287
+}
+debug_info:
+{
+  path: "C:/Users/crist/Desktop/Programming/perfaware/part2/repeater.pdb"
+  timestamp: 66209669491642
+}
+theme: "Default (Dark)"
+debug_info:
+{
+  path: "C:/Users/crist/Desktop/Programming/perfaware/part2/build/repeater.pdb"
+  timestamp: 66209998929978
+}
+debug_info:
+{
+  path: "C:/Users/crist/Desktop/Programming/perfaware/part2/build/repeater.exe"
+  timestamp: 66209942018169
+}
+target:
+{
+  executable: "build/repeater.exe"
+  working_directory: "../part2"
+  arguments: "data/data_10000_haversine_pairs.json"
+}
+target:
+{
+  executable: "build/brancher.exe"
+  working_directory: "../part2"
+  enabled: 1
+  arguments: "1 5"
+}
+debug_info:
+{
+  path: "C:/Users/crist/Desktop/Programming/perfaware/part2/build/brancher.pdb"
+  timestamp: 66210112343582
+}

@@ -25,16 +25,15 @@ int main(int argc, char **argv) {
             seconds_to_try = (u32)atoi(argv[2]);
         }
 
-        Read_Test functions[] = {
-            (Read_Test) { .name = "write_to_all_bytes", .function = write_to_all_bytes_test },
-            (Read_Test) { .name = "mov_all_bytes", .function = mov_all_bytes_test },
-            (Read_Test) { .name = "nop_all_bytes", .function = nop_all_bytes_test },
-            (Read_Test) { .name = "cmp_all_bytes", .function = cmp_all_bytes_test },
-            (Read_Test) { .name = "dec_all_bytes", .function = dec_all_bytes_test },
+        Repetition_Test functions[] = {
+            (Repetition_Test) { .name = "nop_3x1_all_bytes", .function = nop_all_bytes_test },
+            (Repetition_Test) { .name = "nop_1x1_all_bytes", .function = nop_1x1_all_bytes_test },
+            (Repetition_Test) { .name = "nop_1x3_all_bytes", .function = nop_1x3_all_bytes_test },
+            (Repetition_Test) { .name = "nop_1x9_all_bytes", .function = nop_1x9_all_bytes_test },
         };
 
         if (file_size) {
-            Read_Parameters read_parameters = {0};
+            Test_Parameters read_parameters = {0};
             read_parameters.dest = allocate_buffer(file_size);
             read_parameters.name = argv[1];
 
@@ -44,9 +43,10 @@ int main(int argc, char **argv) {
                     for (u32 alloc_type = 0; alloc_type < AllocType_count; ++alloc_type) {
                         Repetition_Tester *tester = testers + function_index;
                         tester->results = (Repetition_Test_Results){0};
-                        Read_Test test_function = functions[function_index];
+                        Repetition_Test test_function = functions[function_index];
 
                         read_parameters.allocation_type = alloc_type;
+                        read_parameters.branch_pattern = Branch_Pattern_none;
 
                         printf("\n--- %s%s%s ---\n", get_allocation_str(alloc_type), read_parameters.allocation_type ? " + " : "", test_function.name);
                         new_test_wave(tester, &read_parameters, seconds_to_try);

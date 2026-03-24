@@ -1,13 +1,16 @@
 #include <stdio.h>
-#ifdef __linux__
-#include <sys/mman.h>
-#include <unistd.h>
-#endif
+#include <stdlib.h>
+#include <string.h>
 #include "repetition_tester.h"
 #include "os_performance_metrics.h"
 #include "util.h"
 
-void new_test_wave(Repetition_Tester *tester, Read_Parameters *parameters, f64 seconds_to_try) {
+#ifdef __linux__
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
+void new_test_wave(Repetition_Tester *tester, Test_Parameters *parameters, f64 seconds_to_try) {
     if (tester->mode == TestMode_uninitialized) {
         *tester = (Repetition_Tester){0};
         tester->cpu_freq = get_cpu_freq();
@@ -152,7 +155,7 @@ void print_results(Repetition_Test_Results results, u64 cpu_freq, u64 processed_
     }
 }
 
-void handle_allocation(Read_Parameters *parameters, Buffer *buffer) {
+void handle_allocation(Test_Parameters *parameters, Buffer *buffer) {
     switch (parameters->allocation_type) {
         case AllocType_none: {} break;
         case AllocType_malloc: {
@@ -187,7 +190,7 @@ void handle_allocation(Read_Parameters *parameters, Buffer *buffer) {
     }
 }
 
-void handle_deallocation(Read_Parameters *parameters, Buffer *buffer) {
+void handle_deallocation(Test_Parameters *parameters, Buffer *buffer) {
     switch (parameters->allocation_type) {
         case AllocType_none: {} break;
         case AllocType_malloc: {
@@ -223,3 +226,79 @@ char const *get_allocation_str(Allocation_Type alloc_type) {
 
     return result;
 }
+
+char const *get_branch_pattern_str(Branch_Pattern pattern) {
+    char const *result;
+
+    switch (pattern) {
+        case Branch_Pattern_never_taken: { result = "never taken"; } break;
+        case Branch_Pattern_always_taken: { result = "always taken"; } break;
+        case Branch_Pattern_every2: { result = "every2"; } break;
+        case Branch_Pattern_every3: { result = "every3"; } break;
+        case Branch_Pattern_every4: { result = "every4"; } break;
+        case Branch_Pattern_CRT_random: { result = "CRT random"; } break;
+        case Branch_Pattern_OS_random: { result = "OS random"; } break;
+        default: { result = "Unimplemented branch pattern"; } break;
+    }
+
+    return result;
+}
+
+void fill_with_branch_pattern(Buffer *dest, Branch_Pattern pattern) {
+    if (pattern == Branch_Pattern_OS_random) {
+        b32 success = fill_buffer_random_os(dest);
+        if (success == false) {
+            fprintf(stderr, "Failed to generate buffer with random os generator. Default value = 0\n");
+            memset(dest->data, 0, dest->count);
+        }
+    } else {
+        for (u64 buffer_index = 0; buffer_index < dest->count; ++buffer_index) {
+            u8 value = 0;
+
+            switch (pattern) {
+                case Branch_Pattern_never_taken: {
+                    value = 0;
+                } break;
+                case Branch_Pattern_always_taken: {
+                    value = 1;
+                } break;
+                case Branch_Pattern_every2: {
+                    value = (buffer_index % 2 == 0) ? 1 : 0;
+                } break;
+                case Branch_Pattern_every3: {
+                    value = (buffer_index % 3 == 0) ? 1 : 0;
+                } break;
+                case Branch_Pattern_every4: {
+                    value = (buffer_index % 4 == 0) ? 1 : 0;
+                } break;
+                case Branch_Pattern_CRT_random: {
+                    value = (u8)rand();
+                } break;
+                default: {
+                    fprintf(stderr, "Branch pattern not implemented: %u\n", pattern);
+                    value = 0;
+                } break;
+            }
+
+            dest->data[buffer_index] = value;
+        }
+    }
+}
+
+#ifdef _WIN32
+
+#include <windows.h>
+#include <bcrypt.h>
+
+#pragma comment(lib, "bcrypt.lib")
+
+b32 fill_buffer_random_os(Buffer *dest) {
+    b32 result;
+
+    if (dest->count) {
+        result = BCryptGenRandom(0, (BYTE *)dest->data, (u32)dest->count, BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0;
+    }
+
+    return result;
+}
+#endif

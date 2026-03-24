@@ -13,7 +13,7 @@
 #include "repetition_tester.h"
 #include "read_overhead_test.h"
 
-void fread_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+void fread_test(Repetition_Tester *tester, Test_Parameters *parameters) {
     while (is_testing(tester)) {
         Buffer dest_buffer = parameters->dest;
         FILE *file = fopen(parameters->name, "rb");
@@ -45,7 +45,7 @@ void fread_test(Repetition_Tester *tester, Read_Parameters *parameters) {
 }
 
 #ifdef __linux__
-void mmap_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+void mmap_test(Repetition_Tester *tester, Test_Parameters *parameters) {
     while (is_testing(tester)) {
         Buffer dest_buffer = parameters->dest;
         s32 fd = open(parameters->name, O_RDONLY);

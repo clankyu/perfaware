@@ -1,6 +1,6 @@
 #include "write_overhead_test.h"
 
-void write_to_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+void write_to_all_bytes_test(Repetition_Tester *tester, Test_Parameters *parameters) {
     while(is_testing(tester)) {
         Buffer dest_buffer = parameters->dest;
 
@@ -15,7 +15,7 @@ void write_to_all_bytes_test(Repetition_Tester *tester, Read_Parameters *paramet
     }
 }
 
-void write_to_all_bytes_backwards_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+void write_to_all_bytes_backwards_test(Repetition_Tester *tester, Test_Parameters *parameters) {
     while(is_testing(tester)) {
         Buffer dest_buffer = parameters->dest;
 
@@ -30,7 +30,7 @@ void write_to_all_bytes_backwards_test(Repetition_Tester *tester, Read_Parameter
     }
 }
 
-void mov_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+void mov_all_bytes_test(Repetition_Tester *tester, Test_Parameters *parameters) {
     while(is_testing(tester)) {
         Buffer dest_buffer = parameters->dest;
 
@@ -43,7 +43,7 @@ void mov_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) 
     }
 }
 
-void nop_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+void nop_all_bytes_test(Repetition_Tester *tester, Test_Parameters *parameters) {
     while(is_testing(tester)) {
         Buffer dest_buffer = parameters->dest;
 
@@ -56,7 +56,7 @@ void nop_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) 
     }
 }
 
-void cmp_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+void cmp_all_bytes_test(Repetition_Tester *tester, Test_Parameters *parameters) {
     while(is_testing(tester)) {
         Buffer dest_buffer = parameters->dest;
 
@@ -69,13 +69,66 @@ void cmp_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) 
     }
 }
 
-void dec_all_bytes_test(Repetition_Tester *tester, Read_Parameters *parameters) {
+void dec_all_bytes_test(Repetition_Tester *tester, Test_Parameters *parameters) {
     while(is_testing(tester)) {
         Buffer dest_buffer = parameters->dest;
 
         handle_allocation(parameters, &dest_buffer);
         start_time(tester);
         dec_all_bytes_asm(dest_buffer.count);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void nop_1x1_all_bytes_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        start_time(tester);
+        nop_1x1_all_bytes_asm(dest_buffer.count);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void nop_1x3_all_bytes_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        start_time(tester);
+        nop_1x3_all_bytes_asm(dest_buffer.count);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void nop_1x9_all_bytes_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        start_time(tester);
+        nop_1x9_all_bytes_asm(dest_buffer.count);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void conditional_nop_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        conditional_nop_asm(parameters->dest.count, parameters->dest.data);
         end_time(tester);
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
