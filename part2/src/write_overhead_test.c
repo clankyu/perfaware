@@ -134,3 +134,129 @@ void conditional_nop_test(Repetition_Tester *tester, Test_Parameters *parameters
         handle_deallocation(parameters, &dest_buffer);
     }
 }
+
+void nop_all_bytes_unaligned_63_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        nop_all_bytes_unaligned_63_asm(parameters->dest.count);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void Read_x1_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        Read_x1_asm(parameters->dest.count, parameters->dest.data);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void Read_x2_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        Read_x2_asm(parameters->dest.count, parameters->dest.data);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void Read_x3_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        Read_x3_asm(parameters->dest.count, parameters->dest.data);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void Read_x4_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        Read_x4_asm(parameters->dest.count, parameters->dest.data);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void read_4x3_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        read_4x3(parameters->dest.count, parameters->dest.data);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void read_8x3_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        read_8x3(parameters->dest.count, parameters->dest.data);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void read_16x3_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        read_16x3(parameters->dest.count, parameters->dest.data);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void read_32x3_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        read_32x3(parameters->dest.count, parameters->dest.data);
+        end_time(tester);
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}

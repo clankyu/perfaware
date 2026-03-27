@@ -26,10 +26,10 @@ int main(int argc, char **argv) {
         }
 
         Repetition_Test functions[] = {
-            (Repetition_Test) { .name = "nop_3x1_all_bytes", .function = nop_all_bytes_test },
-            (Repetition_Test) { .name = "nop_1x1_all_bytes", .function = nop_1x1_all_bytes_test },
-            (Repetition_Test) { .name = "nop_1x3_all_bytes", .function = nop_1x3_all_bytes_test },
-            (Repetition_Test) { .name = "nop_1x9_all_bytes", .function = nop_1x9_all_bytes_test },
+            (Repetition_Test) { .name = "read_4x3", .function = read_4x3_test },
+            (Repetition_Test) { .name = "read_8x3", .function = read_8x3_test },
+            (Repetition_Test) { .name = "read_16x3 simd-sse", .function = read_16x3_test },
+            (Repetition_Test) { .name = "read_32x3 simd-avx2", .function = read_32x3_test },
         };
 
         if (file_size) {

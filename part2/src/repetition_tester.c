@@ -274,6 +274,9 @@ void fill_with_branch_pattern(Buffer *dest, Branch_Pattern pattern) {
                 case Branch_Pattern_CRT_random: {
                     value = (u8)rand();
                 } break;
+                case Branch_Pattern_none: {
+                    break;
+                } break;
                 default: {
                     fprintf(stderr, "Branch pattern not implemented: %u\n", pattern);
                     value = 0;
