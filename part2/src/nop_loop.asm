@@ -9,6 +9,7 @@ global conditional_nop_asm
 global nop_all_bytes_unaligned_63_asm
 
 global Read_x1_asm
+global Read_x1_backwards_asm
 global Read_x2_asm
 global Read_x3_asm
 global Read_x4_asm
@@ -17,6 +18,10 @@ global read_4x3
 global read_8x3
 global read_16x3
 global read_32x3
+global read_32x4
+global read_32x2
+global read_32x1
+global read_128_x_bits
 
 section .text
 
@@ -132,6 +137,15 @@ Read_x1_asm:
     jnle .loop
     ret
 
+Read_x1_backwards_asm:
+    sub rcx, 1
+	align 64
+.loop:
+    mov rax, [rdx + rcx]
+    sub rcx, 1
+    jnle .loop
+    ret
+
 Read_x2_asm:
 	align 64
 .loop:
@@ -206,6 +220,53 @@ read_32x3:
     vmovdqu ymm0, [rdx + 32]
     vmovdqu ymm0, [rdx + 64]
     add rax, 96
+    cmp rax, rcx
+    jb .loop
+    ret
+
+read_32x2:
+    xor rax, rax
+    align 64
+.loop:
+    vmovdqu ymm0, [rdx]
+    vmovdqu ymm0, [rdx + 32]
+    add rax, 64
+    cmp rax, rcx
+    jb .loop
+    ret
+
+read_32x4:
+    xor rax, rax
+    align 64
+.loop:
+    vmovdqu ymm0, [rdx]
+    vmovdqu ymm0, [rdx + 32]
+    vmovdqu ymm0, [rdx + 64]
+    vmovdqu ymm0, [rdx + 96]
+    add rax, 128
+    cmp rax, rcx
+    jb .loop
+    ret
+
+read_32x1:
+    xor rax, rax
+    align 64
+.loop:
+    vmovdqu ymm0, [rdx]
+    add rax, 32
+    cmp rax, rcx
+    jb .loop
+    ret
+
+read_128_x_bits:
+    xor rax, rax
+    align 64
+.loop:
+    vmovdqu ymm0, [rdx]
+    vmovdqu ymm0, [rdx + 32]
+    vmovdqu ymm0, [rdx + 64]
+    vmovdqu ymm0, [rdx + 96]
+    add rax, 128
     cmp rax, rcx
     jb .loop
     ret
