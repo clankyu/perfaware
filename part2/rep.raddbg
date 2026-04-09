@@ -1,15 +1,20 @@
 // raddbg 0.9.24 project file
 
 recent_file: path: "src/repetition_tester.c"
+recent_file: path: "../../../../../../Program Files (x86)/Windows Kits/10/include/10.0.26100.0/ucrt/corecrt_stdio_config.h"
+recent_file: path: "src/alignment_repetition_test_main.c"
+recent_file: path: "D:/a/_work/1/s/src/vctools/crt/vcstartup/src/startup/exe_common.inl"
+recent_file: path: "../../../../../../Program Files (x86)/Windows Kits/10/include/10.0.26100.0/ucrt/stdio.h"
+recent_file: path: "d:/os/obj/amd64fre/minkernel/crts/ucrt/src/appcrt/stdio/mt/objfre/amd64/minkernel/crts/ucrt/src/appcrt/stdio/output.cpp"
+recent_file: path: "d:/os/obj/amd64fre/minkernel/crts/ucrt/src/appcrt/stdio/mt/objfre/amd64/VCCRT/vcruntime/inc/internal_shared.h"
+recent_file: path: "d:/os/obj/amd64fre/minkernel/crts/ucrt/src/appcrt/stdio/mt/objfre/amd64/minkernel/crts/ucrt/src/appcrt/stdio/_file.cpp"
 recent_file: path: "src/write_overhead_test.c"
+recent_file: path: "src/os_performance_metrics.c"
 recent_file: path: "src/repetition_test_main.c"
 recent_file: path: "src/branch_repetition_test_main.c"
 recent_file: path: "src/write_overhead_test.h"
-recent_file: path: "src/os_performance_metrics.c"
 recent_file: path: "src/buffer.c"
-recent_file: path: "../../../../../../Program Files (x86)/Windows Kits/10/include/10.0.26100.0/ucrt/stdio.h"
 recent_file: path: "src/os_performance_metrics.h"
-recent_file: path: "../../../../../../Program Files (x86)/Windows Kits/10/include/10.0.26100.0/ucrt/corecrt_stdio_config.h"
 recent_file: path: "repeater.exe"
 recent_file: path: "src/haversine_formula.c"
 recent_file: path: repeater
@@ -31,7 +36,7 @@ theme: "Default (Dark)"
 debug_info:
 {
   path: "C:/Users/crist/Desktop/Programming/perfaware/part2/build/repeater.pdb"
-  timestamp: 66211083343674
+  timestamp: 66211342146999
 }
 debug_info:
 {
@@ -43,7 +48,6 @@ target:
   executable: "build/repeater.exe"
   working_directory: "../part2"
   arguments: "data/data_10000_haversine_pairs.json 4"
-  enabled: 1
 }
 target:
 {
@@ -55,4 +59,30 @@ debug_info:
 {
   path: "C:/Users/crist/Desktop/Programming/perfaware/part2/build/brancher.pdb"
   timestamp: 66210112343582
+}
+target:
+{
+  executable: "build/alignment.exe"
+  working_directory: "../part2"
+  enabled: 1
+  arguments: "1 64"
+}
+debug_info:
+{
+  path: "C:/Users/crist/Desktop/Programming/perfaware/part2/build/alignment.pdb"
+  timestamp: 66211516322078
+}
+breakpoint:
+{
+  address_location: 0x3ff0000000000000
+  enabled: 1
+  break_on_write: 1
+  break_on_read: 1
+  hit_count: 0
+  condition: true
+}
+breakpoint:
+{
+  address_location: 0x7ff78a97b5ef
+  hit_count: 0
 }

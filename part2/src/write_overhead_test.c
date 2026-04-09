@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "write_overhead_test.h"
 
 void write_to_all_bytes_test(Repetition_Tester *tester, Test_Parameters *parameters) {
@@ -324,8 +325,13 @@ void read_128_12_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0xFFF, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0xFFF / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0xFFF * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -338,8 +344,13 @@ void read_128_14_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0x3FFF, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x4000 / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x4000 * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -352,8 +363,13 @@ void read_128_15_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0x8000, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x8000 / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x8000 * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -366,8 +382,13 @@ void read_128_16_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0xFFFF, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x10000);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x10000 * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -380,8 +401,13 @@ void read_128_18_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0x3FFFF, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x40000);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x40000 * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -394,8 +420,13 @@ void read_128_19_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0x80000, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x80000 / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x80000 * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -408,8 +439,13 @@ void read_128_20_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0xFFFFF, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x100000 / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x100000 * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -422,8 +458,13 @@ void read_128_22_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0x3FFFFF, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x400000 / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x400000 * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -436,8 +477,13 @@ void read_128_24_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0xFFFFFF, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x1000000 / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x1000000 * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -450,8 +496,13 @@ void read_128_25_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0x2000000, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x2000000 / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x2000000 * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }
@@ -464,8 +515,32 @@ void read_128_26_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
         handle_allocation(parameters, &dest_buffer);
         fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
         start_time(tester);
-        read_128_x_bits(0x4000000, parameters->dest.data);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits(rep_count, parameters->dest.data, 0x4000000 / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
         end_time(tester);
+        u64 total_bytes = rep_count * 0x4000000 * 256;
+        count_bytes(tester, dest_buffer.count);
+        handle_deallocation(parameters, &dest_buffer);
+    }
+}
+
+void read_128_12_bits_unrolled_test(Repetition_Tester *tester, Test_Parameters *parameters) {
+    while(is_testing(tester)) {
+        Buffer dest_buffer = parameters->dest;
+
+        handle_allocation(parameters, &dest_buffer);
+        fill_with_branch_pattern(&dest_buffer, parameters->branch_pattern);
+        start_time(tester);
+        u64 stride_size = 262144;
+        u64 rep_count = parameters->dest.count / stride_size;
+        read_128_x_bits_unrolled(rep_count, parameters->dest.data, 0xFFF / 256);
+        u64 leftover_count = parameters->dest.count - (rep_count * stride_size);
+        read_leftover_bits(leftover_count, parameters->dest.data + parameters->dest.count - leftover_count);
+        end_time(tester);
+        u64 total_bytes = rep_count * 0xFFF * 256;
         count_bytes(tester, dest_buffer.count);
         handle_deallocation(parameters, &dest_buffer);
     }

@@ -35,6 +35,7 @@ void new_test_wave(Repetition_Tester *tester, Test_Parameters *parameters, f64 s
     }
 
     tester->try_for_time = seconds_to_try * tester->cpu_freq;
+    //tester->try_for_time = seconds_to_try * tester->cpu_freq;
     tester->tests_started_at = read_cpu_timer();
 }
 

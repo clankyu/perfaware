@@ -92,7 +92,7 @@ void initialize_os_metrics() {
     if (!global_os_metrics.initialized) {
         global_os_metrics.initialized = true;
         global_os_metrics.process_handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, GetCurrentProcessId());
-        get_cpu_freq();
+        u64 freq = get_cpu_freq();
     }
 }
 
@@ -104,6 +104,10 @@ u64 get_os_minor_page_faults() {
     u64 result = memory_counters.PageFaultCount;
 
     return result;
+}
+
+u64 get_cpu_freq_fast() {
+    return get_cpu_freq();
 }
 
 u64 get_cpu_freq() {

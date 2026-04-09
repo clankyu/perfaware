@@ -37,6 +37,7 @@ void read_128_22_bits_test(Repetition_Tester *tester, Test_Parameters *parameter
 void read_128_24_bits_test(Repetition_Tester *tester, Test_Parameters *parameters);
 void read_128_25_bits_test(Repetition_Tester *tester, Test_Parameters *parameters);
 void read_128_26_bits_test(Repetition_Tester *tester, Test_Parameters *parameters);
+void read_128_12_bits_unrolled_test(Repetition_Tester *tester, Test_Parameters *parameters);
 
 extern void mov_all_bytes_asm(u64 count, u8 *data);
 extern void nop_all_bytes_asm(u64 count);
@@ -59,6 +60,9 @@ extern void read_32x3(u64 count, u8 *data);
 extern void read_32x2(u64 count, u8 *data);
 extern void read_32x4(u64 count, u8 *data);
 extern void read_32x1(u64 count, u8 *data);
-extern void read_128_x_bits(u64 count, u8 *data);
+extern void read_128_x_bits(u64 count, u8 *data, u64 read_count);
+extern void read_leftover_bits(u64 leftover_count, u8 *data);
+extern void read_128_x_bits_unrolled(u64 count, u8 *data, u64 read_count);
+extern void read_256x8(u64 count, u8 *data, u64 alignment_padding);
 #pragma comment (lib, "nop_loop")
 

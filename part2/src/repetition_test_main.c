@@ -27,21 +27,13 @@ int main(int argc, char **argv) {
 
         Repetition_Test functions[] = {
             (Repetition_Test) { .name = "read 128 12 bits (4 kib) cache size", .function = read_128_12_bits_test },
-            (Repetition_Test) { .name = "read 128 14 bits (16 kib) cache size", .function = read_128_14_bits_test },
-            (Repetition_Test) { .name = "read 128 15 bits (32 kib) cache size", .function = read_128_15_bits_test },
-            (Repetition_Test) { .name = "read 128 16 bits (64 kib) cache size", .function = read_128_16_bits_test },
-            (Repetition_Test) { .name = "read 128 18 bits (256 kib) cache size", .function = read_128_18_bits_test },
-            (Repetition_Test) { .name = "read 128 19 bits (512 kib) cache size", .function = read_128_19_bits_test },
-            (Repetition_Test) { .name = "read 128 20 bits (1 mib) cache size", .function = read_128_20_bits_test },
-            (Repetition_Test) { .name = "read 128 22 bits (4 mib) cache size", .function = read_128_22_bits_test },
-            (Repetition_Test) { .name = "read 128 24 bits (16 mib) cache size", .function = read_128_24_bits_test },
-            (Repetition_Test) { .name = "read 128 25 bits (32 mib) cache size", .function = read_128_25_bits_test },
-            (Repetition_Test) { .name = "read 128 26 bits (64 mib) cache size", .function = read_128_26_bits_test },
+            (Repetition_Test) { .name = "read 128 12 bits unrolled (4 kib) cache size", .function = read_128_12_bits_unrolled_test },
         };
 
         if (file_size) {
             Test_Parameters read_parameters = {0};
-            read_parameters.dest = allocate_buffer(file_size);
+            //read_parameters.dest = allocate_buffer(file_size);
+            read_parameters.dest = allocate_buffer(1024*1024*1024);
             read_parameters.name = argv[1];
 
             Repetition_Tester testers[array_count(functions)] = {0};

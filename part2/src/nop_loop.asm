@@ -22,6 +22,9 @@ global read_32x4
 global read_32x2
 global read_32x1
 global read_128_x_bits
+global read_leftover_bits
+global read_128_x_bits_unrolled
+global read_256x8_alignment
 
 section .text
 
@@ -259,14 +262,80 @@ read_32x1:
     ret
 
 read_128_x_bits:
-    xor rax, rax
+    align 64
+.outer:
+    mov rax, rdx
+    mov r9, r8
+.inner:
+    vmovdqu ymm0, [rax]
+    vmovdqu ymm0, [rax + 0x20]
+    vmovdqu ymm0, [rax + 0x40]
+    vmovdqu ymm0, [rax + 0x60]
+    vmovdqu ymm0, [rax + 0x80]
+    vmovdqu ymm0, [rax + 0xa0]
+    vmovdqu ymm0, [rax + 0xc0]
+    vmovdqu ymm0, [rax + 0xe0]
+
+    add rax, 256
+    dec r9
+    jnz .inner
+
+    dec rcx
+    jnz .outer
+
+    ret
+
+read_128_x_bits_unrolled:
+    align 64
+.outer:
+    mov rax, rdx
+    mov r9, r8
+.inner:
+    vmovdqu ymm0, [rax]
+    vmovdqu ymm1, [rax + 0x20]
+    vmovdqu ymm2, [rax + 0x40]
+    vmovdqu ymm3, [rax + 0x60]
+    vmovdqu ymm4, [rax + 0x80]
+    vmovdqu ymm5, [rax + 0xa0]
+    vmovdqu ymm6, [rax + 0xc0]
+    vmovdqu ymm7, [rax + 0xe0]
+
+    add rax, 256
+    dec r9
+    jnz .inner
+
+    dec rcx
+    jnz .outer
+
+    ret
+
+read_leftover_bits:
+    jrcxz .is_zero
+    xor r9, r9
+.loop:
+    mov rax, [rdx + r9]
+    inc r9
+    cmp rcx, r9
+    jnz .loop
+
+.is_zero:
+    ret
+
+read_256x8_alignment:
+    mov rax, rdx
+    add rax, r8
     align 64
 .loop:
-    vmovdqu ymm0, [rdx]
-    vmovdqu ymm0, [rdx + 32]
-    vmovdqu ymm0, [rdx + 64]
-    vmovdqu ymm0, [rdx + 96]
-    add rax, 128
-    cmp rax, rcx
-    jb .loop
+    vmovdqu ymm0, [rax]
+    vmovdqu ymm0, [rax + 0x20]
+    vmovdqu ymm0, [rax + 0x40]
+    vmovdqu ymm0, [rax + 0x60]
+    vmovdqu ymm0, [rax + 0x80]
+    vmovdqu ymm0, [rax + 0xa0]
+    vmovdqu ymm0, [rax + 0xc0]
+    vmovdqu ymm0, [rax + 0xe0]
+    add rax, 256
+    sub rcx, 256
+    jnz .loop
+
     ret

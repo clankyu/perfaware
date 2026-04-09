@@ -22,6 +22,10 @@ if /I "%MODE%"=="read" (
     echo [BUILDING BRANCH PREDICTOR TESTER]
     set "source_files=%PROJECT_ROOT%\src\branch_test_build.c"
     set "exe_name=brancher.exe"
+) else if /I "%MODE%"=="align" (
+    echo [BUILDING ALIGNMENT TESTER]
+    set "source_files=%PROJECT_ROOT%\src\alignment_test_build.c"
+    set "exe_name=alignment.exe"
 ) else (
     echo Unknown mode: %MODE%
     echo Usage: rep.bat [read^|branch]
